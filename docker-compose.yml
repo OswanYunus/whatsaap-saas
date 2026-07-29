@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: waas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: waas_user
+      POSTGRES_PASSWORD: waas_password
+      POSTGRES_DB: waas_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - waas_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waas_user -d waas_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: waas_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - waas_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  waas_postgres_data:
+  waas_redis_data:

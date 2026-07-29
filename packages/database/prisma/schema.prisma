@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InstanceStatus {
+  PENDING
+  CONNECTING
+  CONNECTED
+  DISCONNECTED
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  passwordHash String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  workspaces   WorkspaceMember[]
+}
+
+model Workspace {
+  id          String              @id @default(cuid())
+  name        String
+  createdAt   DateTime            @default(now())
+
+  members     WorkspaceMember[]
+  instances   Instance[]
+}
+
+model WorkspaceMember {
+  id          String      @id @default(cuid())
+
+  userId      String
+  workspaceId String
+
+  role        Role        @default(MEMBER)
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Instance {
+  id            String           @id @default(cuid())
+  workspaceId   String
+
+  name          String
+  phoneNumber   String?
+  sessionId     String?          @unique
+  status        InstanceStatus   @default(PENDING)
+
+  createdAt     DateTime         @default(now())
+
+  workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  apiKeys       ApiKey[]
+  messages      Message[]
+}
+
+model ApiKey {
+  id          String      @id @default(cuid())
+  instanceId  String
+
+  key         String      @unique
+  createdAt   DateTime    @default(now())
+
+  instance    Instance    @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id           String         @id @default(cuid())
+  instanceId   String
+
+  to           String
+  body         String
+
+  status       MessageStatus  @default(QUEUED)
+
+  createdAt    DateTime       @default(now())
+
+  sentAt       DateTime?
+
+  instance     Instance       @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+}
