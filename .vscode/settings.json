@@ -1,3 +1,10 @@
 {
-    "js/ts.tsdk.path": "node_modules\\typescript\\lib"
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "tailwindCSS.experimental.configFile": "apps/web/tailwind.config.js",
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "css.validate": false,
+  "tailwindCSS.validate": true
 }

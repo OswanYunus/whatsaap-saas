@@ -14,6 +14,12 @@ import healthRoutes from "./modules/health/health.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import usersRoutes from "./modules/users/users.routes";
 import whatsappRoutes from "./modules/whatsapp/whatsapp.routes";
+import workspacesRoutes from "./modules/workspaces/workspaces.routes";
+import contactsRoutes from "./modules/contacts/contacts.routes";
+import campaignsRoutes from "./modules/campaigns/campaigns.routes";
+import messagesRoutes from "./modules/messages/messages.routes";
+import apiKeysRoutes from "./modules/api-keys/api-keys.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
 /**
  * Builds and returns a fully configured Fastify instance without
@@ -40,6 +46,12 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: "/api" });
   await app.register(usersRoutes, { prefix: "/api" });
   await app.register(whatsappRoutes, { prefix: "/api" });
+  await app.register(workspacesRoutes, { prefix: "/api" });
+  await app.register(contactsRoutes, { prefix: "/api" });
+  await app.register(campaignsRoutes, { prefix: "/api" });
+  await app.register(messagesRoutes, { prefix: "/api" });
+  await app.register(apiKeysRoutes, { prefix: "/api" });
+  await app.register(dashboardRoutes, { prefix: "/api" });
 
   return app;
 }

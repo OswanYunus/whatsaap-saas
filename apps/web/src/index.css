@@ -1,3 +1,260 @@
+@import url("https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css");
+@import url("https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-mono/style.min.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-canvas text-ink-800 dark:bg-canvas-dark dark:text-ink-100;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .font-mono,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-accent-500/20 text-ink-900 dark:text-white;
+  }
+}
+
+@layer components {
+  /* ── Surfaces ── */
+  .card {
+    @apply rounded-lg border border-ink-100/80 bg-surface shadow-card;
+    @apply dark:border-white/10 dark:bg-surface-dark dark:shadow-card-dark;
+  }
+
+  .card-flat {
+    @apply rounded-lg border border-ink-100/80 bg-surface;
+    @apply dark:border-white/10 dark:bg-surface-dark;
+  }
+
+  /* ── Buttons (base styles inlined in variants to avoid @apply nesting errors) ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150;
+    @apply disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .btn-primary {
+    @apply btn bg-ink-800 text-white shadow-sm hover:bg-ink-900 active:scale-[0.98];
+    @apply dark:bg-white dark:text-ink-900 dark:hover:bg-ink-50;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent-600 text-white shadow-sm hover:bg-accent-700 active:scale-[0.98];
+    @apply dark:bg-accent-500 dark:text-ink-900 dark:hover:bg-accent-400;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-500 hover:bg-ink-100/80 hover:text-ink-700;
+    @apply dark:text-ink-400 dark:hover:bg-white/10 dark:hover:text-ink-200;
+  }
+
+  .btn-outline {
+    @apply btn border border-ink-200/80 bg-transparent text-ink-600 hover:bg-ink-50 hover:border-ink-300;
+    @apply dark:border-white/10 dark:text-ink-300 dark:hover:bg-white/10;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 active:scale-[0.98];
+  }
+
+  /* ── Form controls ── */
+  .input {
+    @apply w-full rounded-md border border-ink-200/80 bg-white px-2.5 py-1.5 text-[13px] text-ink-800 placeholder:text-ink-400 transition-colors duration-150;
+    @apply focus:border-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-800/5;
+    @apply dark:border-white/10 dark:bg-surface-raised-dark dark:text-ink-100 dark:placeholder:text-ink-500;
+    @apply dark:focus:border-ink-500 dark:focus:ring-white/10;
+  }
+
+  .label {
+    @apply text-[13px] font-medium text-ink-700 dark:text-ink-200;
+  }
+
+  /* ── Page structure ── */
+  .page-header {
+    @apply space-y-0.5;
+  }
+
+  .page-title {
+    @apply text-[17px] font-semibold tracking-tight text-ink-800 dark:text-white;
+  }
+
+  .page-subtitle {
+    @apply text-[13px] text-ink-400;
+  }
+
+  .section-title {
+    @apply text-[13px] font-medium text-ink-700 dark:text-ink-200;
+  }
+
+  /* ── Tables ── */
+  .table-wrap {
+    @apply card overflow-hidden;
+  }
+
+  .table {
+    @apply w-full text-left text-[13px];
+  }
+
+  .table thead {
+    @apply border-b border-ink-100/80 bg-surface-raised;
+    @apply dark:border-white/10 dark:bg-surface-raised-dark;
+  }
+
+  .table th {
+    @apply px-4 py-2.5 text-2xs font-medium uppercase tracking-wider text-ink-400 dark:text-ink-500;
+  }
+
+  .table tbody {
+    @apply divide-y divide-ink-100/60 dark:divide-white/10;
+  }
+
+  .table td {
+    @apply px-4 py-2.5;
+  }
+
+  .table-row {
+    @apply transition-colors duration-150 hover:bg-ink-50/80 dark:hover:bg-white/10;
+  }
+
+  /* ── Navigation ── */
+  .nav-item {
+    @apply relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150;
+  }
+
+  .nav-item-active {
+    @apply bg-ink-100/70 text-ink-900 dark:bg-white/10 dark:text-white;
+  }
+
+  .nav-item-inactive {
+    @apply text-ink-500 hover:bg-ink-100/50 hover:text-ink-700;
+    @apply dark:text-ink-400 dark:hover:bg-white/10 dark:hover:text-ink-200;
+  }
+
+  .nav-indicator {
+    @apply absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-ink-800 dark:bg-accent-500;
+  }
+
+  /* ── Segmented control ── */
+  .segmented {
+    @apply inline-flex items-center gap-0.5 rounded-md border border-ink-200/80 bg-surface-raised p-0.5;
+    @apply dark:border-white/10 dark:bg-surface-raised-dark;
+  }
+
+  .segmented-item {
+    @apply rounded px-2.5 py-1 text-2xs font-medium transition-all duration-150;
+  }
+
+  .segmented-item-active {
+    @apply bg-white text-ink-800 shadow-sm dark:bg-white/10 dark:text-white;
+  }
+
+  .segmented-item-inactive {
+    @apply text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200;
+  }
+
+  /* ── Empty states ── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center px-4 py-10 text-center;
+  }
+
+  .empty-state-icon {
+    @apply mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-ink-100/80 text-ink-400;
+    @apply dark:bg-white/10 dark:text-ink-500;
+  }
+
+  .empty-state-title {
+    @apply text-[13px] font-medium text-ink-600 dark:text-ink-300;
+  }
+
+  .empty-state-desc {
+    @apply mt-1 max-w-xs text-2xs text-ink-400 dark:text-ink-500;
+  }
+
+  /* ── Loading skeletons ── */
+  .skeleton {
+    @apply animate-shimmer rounded-md bg-ink-100/80 dark:bg-white/10;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-3 w-full;
+  }
+
+  .skeleton-title {
+    @apply skeleton h-4 w-2/3;
+  }
+
+  .skeleton-stat {
+    @apply skeleton h-7 w-16;
+  }
+
+  /* ── Dropdown ── */
+  .dropdown {
+    @apply absolute z-20 mt-1.5 min-w-[180px] animate-slide-down rounded-lg border border-ink-100/80 bg-white py-1 shadow-dropdown;
+    @apply dark:border-white/10 dark:bg-surface-dark dark:shadow-dropdown-dark;
+  }
+
+  /* ── Kanban column ── */
+  .kanban-col {
+    @apply card-flat flex flex-col;
+  }
+
+  .kanban-col-header {
+    @apply flex items-center justify-between border-b border-ink-100/60 px-3 py-2.5 dark:border-white/10;
+  }
+
+  .kanban-card {
+    @apply rounded-md border border-ink-100/60 bg-surface-raised px-2.5 py-2 text-2xs transition-all duration-150;
+    @apply hover:border-ink-200/80 hover:shadow-sm;
+    @apply dark:border-white/10 dark:bg-surface-raised-dark dark:hover:border-white/20;
+  }
+
+  /* ── Settings tabs ── */
+  .settings-tab {
+    @apply block w-full rounded-md px-2.5 py-1.5 text-left text-[13px] font-medium transition-all duration-150;
+  }
+
+  .settings-tab-active {
+    @apply bg-ink-100/70 text-ink-900 dark:bg-white/10 dark:text-white;
+  }
+
+  .settings-tab-inactive {
+    @apply text-ink-500 hover:bg-ink-100/50 hover:text-ink-700;
+    @apply dark:text-ink-400 dark:hover:bg-white/10 dark:hover:text-ink-200;
+  }
+
+  /* ── Live indicator ── */
+  .live-badge {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-ink-200/80 px-2.5 py-1 text-2xs font-medium text-ink-500 transition-colors duration-150 hover:bg-ink-50;
+    @apply dark:border-white/10 dark:text-ink-400 dark:hover:bg-white/10;
+  }
+
+  /* ── Progress bar ── */
+  .progress-track {
+    @apply h-1 w-full overflow-hidden rounded-full bg-ink-100 dark:bg-white/10;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full bg-accent-500 transition-all duration-300;
+  }
+
+  /* ── Auth layout ── */
+  .auth-shell {
+    @apply flex min-h-screen items-center justify-center bg-canvas px-4 dark:bg-canvas-dark;
+  }
+
+  .auth-card {
+    @apply card p-6;
+  }
+}

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { whatsappService } from "./whatsapp.service";
 
 const createInstanceSchema = z.object({
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string().cuid(),
   name: z.string().min(1).max(100)
 });
 
