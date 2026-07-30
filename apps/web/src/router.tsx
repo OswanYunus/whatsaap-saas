@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { ProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
 import DashboardLayout from "./layouts/DashboardLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -12,26 +13,29 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
 
 /**
- * Route tree. Auth pages are outside DashboardLayout (no sidebar/navbar);
- * everything else is nested under it. Route-level auth guarding
- * (redirect to /login when unauthenticated) will be added once the
- * login flow is implemented — intentionally left out at this stage.
+ * Route tree. /login and /register are only reachable when logged
+ * out (PublicOnlyRoute); everything under DashboardLayout requires a
+ * verified session (ProtectedRoute) and redirects to /login otherwise.
  */
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<PublicOnlyRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
 
-      <Route element={<DashboardLayout />}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/instances" element={<InstancesPage />} />
-        <Route path="/instances/connect" element={<InstanceConnectPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
-        <Route path="/campaigns" element={<CampaignsPage />} />
-        <Route path="/queue" element={<QueueMonitorPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/instances" element={<InstancesPage />} />
+          <Route path="/instances/connect" element={<InstanceConnectPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route path="/queue" element={<QueueMonitorPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
       </Route>
     </Routes>
   );

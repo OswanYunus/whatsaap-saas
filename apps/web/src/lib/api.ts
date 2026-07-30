@@ -1,10 +1,14 @@
 /**
- * Thin fetch wrapper for talking to the API. Kept intentionally
- * minimal at this scaffolding stage — no interceptors, no automatic
- * refresh-token flow yet. Both will be added once the auth pages are
- * implemented.
+ * Thin fetch wrapper for talking to the API.
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number, public readonly code?: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 export async function apiFetch<T>(
   path: string,
@@ -23,7 +27,16 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body?.error?.message ?? `Request failed with status ${response.status}`);
+    throw new ApiError(
+      body?.error?.message ?? `Request failed with status ${response.status}`,
+      response.status,
+      body?.error?.code
+    );
+  }
+
+  // 204 No Content and similar have no JSON body to parse.
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;

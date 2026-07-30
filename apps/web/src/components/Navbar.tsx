@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, ChevronDown, LogOut, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
-import { workspace } from "../lib/mockData";
 
 /**
  * Top navbar: workspace selector, notifications, dark-mode toggle,
@@ -11,58 +11,61 @@ import { workspace } from "../lib/mockData";
  */
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const { user, clearSession } = useAuth();
+  const { user, workspaces, logout } = useAuth();
+  const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <header className="sticky top-0 z-10 flex h-12 items-center justify-between border-b border-ink-100/80 bg-surface/80 px-5 backdrop-blur-md dark:border-white/10 dark:bg-surface-dark/80 lg:px-6">
-      <button className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] font-medium text-ink-600 transition-colors duration-150 hover:bg-ink-100/60 dark:text-ink-200 dark:hover:bg-white/10">
-        <span className="max-w-[180px] truncate">{workspace.name}</span>
-        <ChevronDown size={13} className="shrink-0 opacity-50" />
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-ink-100 bg-white px-6 dark:border-ink-700 dark:bg-ink-800">
+      <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-100 dark:text-ink-100 dark:hover:bg-ink-700">
+        {workspaces[0]?.name ?? "Workspace"}
+        <ChevronDown size={14} />
       </button>
 
-      <div className="flex items-center gap-0.5">
-        <button aria-label="Notifications" className="btn-ghost h-8 w-8 p-0">
-          <Bell size={16} strokeWidth={1.75} />
+      <div className="flex items-center gap-1.5">
+        <button
+          aria-label="Notifications"
+          className="btn-ghost h-9 w-9 p-0"
+        >
+          <Bell size={18} />
         </button>
 
         <button
           aria-label="Toggle dark mode"
           onClick={toggleTheme}
-          className="btn-ghost h-8 w-8 p-0"
+          className="btn-ghost h-9 w-9 p-0"
         >
-          {theme === "dark" ? (
-            <Sun size={16} strokeWidth={1.75} />
-          ) : (
-            <Moon size={16} strokeWidth={1.75} />
-          )}
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <div className="relative ml-1">
+        <div className="relative">
           <button
             onClick={() => setProfileOpen((prev) => !prev)}
-            className="flex items-center rounded-md p-1 transition-colors duration-150 hover:bg-ink-100/60 dark:hover:bg-white/10"
+            className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2 hover:bg-ink-100 dark:hover:bg-ink-700"
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-700 text-2xs font-semibold text-white dark:bg-accent-500 dark:text-ink-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink-700 text-xs font-semibold text-white dark:bg-accent-500 dark:text-ink-900">
               {(user?.email?.[0] ?? "U").toUpperCase()}
             </span>
           </button>
 
           {profileOpen && (
-            <div className="dropdown right-0 w-48">
-              <div className="border-b border-ink-100/60 px-3 py-2 dark:border-white/10">
-                <p className="truncate text-2xs font-medium text-ink-600 dark:text-ink-300">
-                  {user?.email ?? "Not signed in"}
-                </p>
+            <div className="absolute right-0 mt-2 w-52 rounded-lg border border-ink-100 bg-white py-1 shadow-card dark:border-ink-700 dark:bg-ink-800">
+              <div className="border-b border-ink-100 px-3 py-2 text-xs text-ink-400 dark:border-ink-700">
+                {user?.email ?? "Not signed in"}
               </div>
-              <button className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-ink-600 transition-colors duration-150 hover:bg-ink-50 dark:text-ink-300 dark:hover:bg-white/10">
-                <User size={14} strokeWidth={1.75} /> Profile
+              <button className="flex w-full items-center gap-2 px-3 py-2 text-sm text-ink-700 hover:bg-ink-100 dark:text-ink-100 dark:hover:bg-ink-700">
+                <User size={14} /> Profile
               </button>
               <button
-                onClick={clearSession}
-                className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-red-600 transition-colors duration-150 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
               >
-                <LogOut size={14} strokeWidth={1.75} /> Log out
+                <LogOut size={14} /> Log out
               </button>
             </div>
           )}
