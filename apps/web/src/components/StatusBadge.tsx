@@ -34,12 +34,24 @@ const STATUS_TONE: Record<string, Tone> = {
   disconnected: "gray",
   draft: "gray",
   logged_out: "gray",
-  failed: "red"
+  failed: "red",
+
+  // Uppercase database values
+  CONNECTED: "green",
+  CONNECTING: "amber",
+  QR_WAITING: "amber",
+  PAIRING_CODE: "blue",
+  RECONNECTING: "amber",
+  LOGGED_OUT: "gray",
+  ERROR: "red",
+  PENDING: "gray",
+  DISCONNECTED: "gray"
 };
 
 export default function StatusBadge({ status, pulse = false }: { status: string; pulse?: boolean }) {
-  const tone = STATUS_TONE[status] ?? "gray";
-  const label = status.replace(/_/g, " ");
+  const normalizedStatus = status ?? "";
+  const tone = STATUS_TONE[normalizedStatus] ?? STATUS_TONE[normalizedStatus.toLowerCase()] ?? STATUS_TONE[normalizedStatus.toUpperCase()] ?? "gray";
+  const label = normalizedStatus.replace(/_/g, " ");
 
   return (
     <span

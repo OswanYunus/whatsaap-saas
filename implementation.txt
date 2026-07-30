@@ -1,0 +1,102 @@
+# Whatsapp Instances Module Implementation Plan
+
+This plan details the design and implementation of the WhatsApp Instances module. It will integrate **Baileys** for WhatsApp protocol communication, persist session data strictly in **PostgreSQL** (never in memory or files), implement real-time QR/pairing code updates, and allow workspaces to manage their own WhatsApp instances.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Database Changes**: We will add a new database table `BaileysAuth` to store session credentials and signal keys, and add fields to the existing `Instance` table (`qrCodeString`, `pairingCode`, `qrExpiresAt`, `lastSeenAt`, `lastError`, `displayName`). These are strictly additive changes and do not break the existing schema. We will also add new statuses to the `InstanceStatus` enum.
+> **Process Inter-communication**: Since the API server and queue worker run in separate processes, and only one process can run the Baileys connection socket at a time, the API server will run the sockets. If the queue worker needs to send a message, it will make an authenticated internal HTTP request to the API server, which will use the active socket to dispatch the message.
+
+## Proposed Changes
+
+---
+
+### Database Layer
+
+#### [MODIFY] [schema.prisma](file:///d:/Projects/whatsapp-saas/packages/database/prisma/schema.prisma)
+Extend the schema with:
+- **`InstanceStatus` Enum**: Add `QR_WAITING`, `PAIRING_CODE`, `RECONNECTING`, `LOGGED_OUT`, and `ERROR` values. (Keep `PENDING`, `CONNECTING`, `CONNECTED`, `DISCONNECTED` for backward compatibility).
+- **`Instance`**: Add:
+  - `qrCodeString  String?`
+  - `pairingCode   String?`
+  - `qrExpiresAt   DateTime?`
+  - `lastSeenAt    DateTime?`
+  - `lastError     String?`
+  - `displayName   String?`
+- **`BaileysAuth`**: Add a new model to store credentials and key-value pair session keys. It references `Instance` via `instanceId` and has a composite unique constraint `@@unique([instanceId, key])` to store Baileys auth keys/creds.
+
+---
+
+### Backend Layer: API & WhatsApp Service
+
+We will install `@whiskeysockets/baileys`, `@hapi/boom`, and `qrcode` dependencies.
+
+#### [NEW] [baileys-auth-store.ts](file:///d:/Projects/whatsapp-saas/apps/api/src/modules/whatsapp/baileys-auth-store.ts)
+A custom Baileys authentication state provider (`usePostgresAuthState(instanceId)`) that stores all creds and signal keys in the PostgreSQL `BaileysAuth` table using Baileys' `BufferJSON` serializer/deserializer.
+
+#### [NEW] [whatsapp.manager.ts](file:///d:/Projects/whatsapp-saas/apps/api/src/modules/whatsapp/whatsapp.manager.ts)
+A singleton manager that:
+- Maintains the in-memory map of active Baileys socket connections.
+- Automatically connects and restores instances.
+- Reconnects disconnected sockets automatically (unless manually logged out).
+- Dispatches connection status, QR events, and pairing code events to a global EventEmitter `whatsappEvents`.
+- Handles phone-number pairing code requests.
+
+#### [MODIFY] [whatsapp.service.ts](file:///d:/Projects/whatsapp-saas/apps/api/src/modules/whatsapp/whatsapp.service.ts)
+Implement backend methods:
+- `createInstance(workspaceId, name)`
+- `listInstances(workspaceId)`
+- `deleteInstance(instanceId)`
+- `getStatus(instanceId)`
+- `sendMessage(instanceId, to, content)`: If running inside the API process, uses the active socket directly. If running inside the worker process, routes it via an internal HTTP request to the API process.
+
+#### [MODIFY] [whatsapp.routes.ts](file:///d:/Projects/whatsapp-saas/apps/api/src/modules/whatsapp/whatsapp.routes.ts)
+Define endpoints:
+- `GET /api/whatsapp/instances`: List all instances for the workspace.
+- `POST /api/whatsapp/instances`: Create an instance.
+- `DELETE /api/whatsapp/instances/:id`: Delete/disconnect instance.
+- `POST /api/whatsapp/instances/:id/pairing-code`: Request a phone number pairing code.
+- `POST /api/whatsapp/instances/:id/reconnect`: Manual trigger to reconnect/refresh.
+- `GET /api/whatsapp/instances/:id/events`: Server-Sent Events (SSE) stream for live updates (QR codes, pairing codes, and connection status).
+- `POST /api/whatsapp/instances/:id/send-internal`: Internal route for message sending by the worker.
+
+#### [MODIFY] [app.ts](file:///d:/Projects/whatsapp-saas/apps/api/src/app.ts)
+Initialize `whatsappManager` when Fastify starts to restore previously active WhatsApp connections.
+
+---
+
+### Frontend Layer: React Pages
+
+#### [MODIFY] [InstancesPage.tsx](file:///d:/Projects/whatsapp-saas/apps/web/src/pages/InstancesPage.tsx)
+- Fetch and display the list of real instances from `GET /api/whatsapp/instances`.
+- Display a modal or redirect to connect a device.
+- Support disconnecting/deleting an instance.
+
+#### [MODIFY] [InstanceConnectPage.tsx](file:///d:/Projects/whatsapp-saas/apps/web/src/pages/InstanceConnectPage.tsx)
+- Rebuild the page into a clean, premium onboarding wizard.
+- First step: enter the Instance Name.
+- Second step: Choose pairing method: **QR Code** or **Phone Number Pairing Code**.
+- Display live-updating QR code or 8-character pairing code using Server-Sent Events (SSE).
+- Track QR expiration with a progress indicator and automatic expiration/refresh state.
+- Automatically redirect the user to `/instances` upon successful connection.
+
+---
+
+## Verification Plan
+
+### Automated Verification
+- Verify the server builds and TypeScript type checks complete without errors:
+  - `pnpm build`
+  - `pnpm lint`
+- Run database migrations:
+  - `pnpm db:migrate`
+
+### Manual Verification
+- Start backend and frontend development servers.
+- Go to the browser, log in, navigate to Instances, and create a new instance.
+- Test both connection methods:
+  - Pair via QR code (verify live-updating status).
+  - Pair via Phone Number pairing code (verify code generation and status).
+- Verify connection persistence by restarting the backend server (verify that the connection is automatically restored).
+- Send a test message and verify delivery.

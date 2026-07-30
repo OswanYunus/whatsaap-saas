@@ -21,6 +21,8 @@ import messagesRoutes from "./modules/messages/messages.routes";
 import apiKeysRoutes from "./modules/api-keys/api-keys.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 
+import { whatsappManager } from "./modules/whatsapp/whatsapp.manager";
+
 /**
  * Builds and returns a fully configured Fastify instance without
  * starting it. Split from server.ts so the same app can be reused in
@@ -52,6 +54,14 @@ export async function buildApp() {
   await app.register(messagesRoutes, { prefix: "/api" });
   await app.register(apiKeysRoutes, { prefix: "/api" });
   await app.register(dashboardRoutes, { prefix: "/api" });
+
+  app.addHook("onReady", async () => {
+    if (process.env.NODE_ENV !== "test") {
+      whatsappManager.initialize().catch((err) => {
+        app.log.error(err, "Failed to auto-restore WhatsApp connections");
+      });
+    }
+  });
 
   return app;
 }

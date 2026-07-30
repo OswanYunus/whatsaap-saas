@@ -1,54 +1,100 @@
 import { prisma } from "@waas/database";
+import { env } from "@waas/config";
 import type { WhatsAppSendResult } from "./whatsapp.types";
+import { whatsappManager } from "./whatsapp.manager";
+import { logger } from "../../utils/logger";
 
-/**
- * Abstraction boundary around the Baileys WhatsApp Web library.
- *
- * IMPORTANT: this is intentionally a placeholder. No Baileys socket is
- * created here yet. The goal of this class is to define the *contract*
- * the rest of the app (queue workers, routes) will program against, so
- * that:
- *   1. The messaging implementation can be built and tested in isolation.
- *   2. Baileys could be swapped for another WhatsApp Cloud API provider
- *      later without touching call sites outside this file.
- *
- * Planned responsibilities once implemented:
- *   - createInstance(workspaceId): initialize a Baileys auth state,
- *     open a socket, and persist QR/connection events to the
- *     WhatsAppInstance row (status + encrypted sessionData).
- *   - restoreInstance(instanceId): rehydrate a socket from stored
- *     session data on API/worker startup.
- *   - sendMessage(instanceId, to, content): send a message and return
- *     the provider's message id for delivery-log correlation.
- *   - handleIncomingEvents(instanceId): subscribe to Baileys
- *     connection.update / messages.upsert events and update
- *     WhatsAppInstance / Message rows accordingly.
- */
 export class WhatsAppService {
   async createInstance(workspaceId: string, name: string) {
-    // TODO: initialize Baileys multi-file auth state and socket.
-    return prisma.instance.create({
+    const instance = await prisma.instance.create({
       data: {
         workspaceId,
         name,
         status: "PENDING"
       }
     });
+
+    // Boot the socket connection immediately so it can start generating a QR code
+    whatsappManager.connectInstance(instance.id).catch((err) => {
+      logger.error(err, `Failed to boot instance ${instance.id} on creation`);
+    });
+
+    return instance;
+  }
+
+  async listInstances(workspaceId: string) {
+    return prisma.instance.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  async deleteInstance(instanceId: string) {
+    // Shutdown and clear credentials
+    await whatsappManager.disconnectInstance(instanceId);
+    
+    // Delete from DB
+    await prisma.instance.delete({
+      where: { id: instanceId }
+    });
+
+    return { id: instanceId, deleted: true };
   }
 
   async getStatus(instanceId: string) {
     return prisma.instance.findUniqueOrThrow({
       where: { id: instanceId },
-      select: { id: true, status: true, name: true }
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        displayName: true,
+        status: true,
+        qrCodeString: true,
+        pairingCode: true,
+        qrExpiresAt: true,
+        lastSeenAt: true,
+        lastError: true
+      }
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async sendMessage(_instanceId: string, _to: string, _content: string): Promise<WhatsAppSendResult> {
-    throw new Error(
-      "WhatsAppService.sendMessage is not implemented yet. " +
-        "This is a contract placeholder pending Baileys integration."
-    );
+  async sendMessage(instanceId: string, to: string, content: string): Promise<WhatsAppSendResult> {
+    // If the socket is active in the current memory workspace (API process)
+    if (whatsappManager.hasActiveSocket(instanceId)) {
+      return whatsappManager.sendMessage(instanceId, to, content);
+    }
+
+    // Otherwise, we are in a worker process! Forward the request to the main API process
+    logger.info(`Forwarding send request for instance ${instanceId} from worker process to API server`);
+    
+    const host = env.API_HOST === "0.0.0.0" ? "localhost" : env.API_HOST;
+    const url = `http://${host}:${env.API_PORT}/api/whatsapp/instances/${instanceId}/send-internal`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-internal-token": env.JWT_ACCESS_SECRET
+        },
+        body: JSON.stringify({ to, content })
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as any;
+        throw new Error(body?.error || `Internal API returned status ${response.status}`);
+      }
+
+      const result = await response.json() as WhatsAppSendResult;
+      return result;
+    } catch (err) {
+      logger.error(err, `Failed to dispatch message internally to API for instance ${instanceId}`);
+      return {
+        externalMessageId: "",
+        status: "FAILED"
+      };
+    }
   }
 }
 
