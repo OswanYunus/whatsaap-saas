@@ -9,6 +9,7 @@ import { jwtConfig } from "./utils/jwt";
 import prismaPlugin from "./plugins/prisma";
 import errorHandlerPlugin from "./plugins/error-handler";
 import authMiddleware from "./middleware/auth.middleware";
+import apiKeyAuthPlugin from "./plugins/api-key-auth";
 
 import healthRoutes from "./modules/health/health.routes";
 import authRoutes from "./modules/auth/auth.routes";
@@ -22,6 +23,7 @@ import messagesRoutes from "./modules/messages/messages.routes";
 import apiKeysRoutes from "./modules/api-keys/api-keys.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import workspaceSettingsRoutes from "./modules/workspaces/workspace-settings.routes";
+import publicSendRoutes from "./modules/public/public-send.routes";
 
 import { whatsappManager } from "./modules/whatsapp/whatsapp.manager";
 
@@ -44,6 +46,7 @@ export async function buildApp() {
   await app.register(prismaPlugin);
   await app.register(errorHandlerPlugin);
   await app.register(authMiddleware);
+  await app.register(apiKeyAuthPlugin);
 
   // --- Routes ---
   await app.register(healthRoutes);
@@ -58,6 +61,7 @@ export async function buildApp() {
   await app.register(apiKeysRoutes, { prefix: "/api" });
   await app.register(dashboardRoutes, { prefix: "/api" });
   await app.register(workspaceSettingsRoutes, { prefix: "/api" });
+  await app.register(publicSendRoutes, { prefix: "/api" });
 
   app.addHook("onReady", async () => {
     if (process.env.NODE_ENV !== "test") {

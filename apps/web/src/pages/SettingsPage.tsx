@@ -193,7 +193,7 @@ function ApiKeysTab() {
   const fetchKeys = useCallback(async () => {
     if (!workspaceId) return;
     try {
-      const data = await apiFetch<ApiKey[]>(`/api/api-keys?workspaceId=${workspaceId}`, { accessToken: token });
+      const data = await apiFetch<ApiKey[]>(`/api/workspace-api-keys?workspaceId=${workspaceId}`, { accessToken: token });
       setKeys(data);
     } catch {}
     finally { setLoading(false); }
@@ -205,7 +205,7 @@ function ApiKeysTab() {
     if (!workspaceId || !newLabel.trim()) return;
     setCreating(true);
     try {
-      const res = await apiFetch<{ rawKey: string } & ApiKey>("/api/api-keys", {
+      const res = await apiFetch<{ rawKey: string } & ApiKey>("/api/workspace-api-keys", {
         method: "POST",
         body: JSON.stringify({ workspaceId, label: newLabel.trim() }),
         accessToken: token
@@ -224,7 +224,7 @@ function ApiKeysTab() {
   const handleRevoke = async (id: string, label: string) => {
     if (!confirm(`Revoke key "${label}"? This cannot be undone.`)) return;
     try {
-      await apiFetch(`/api/api-keys/${id}`, { method: "DELETE", accessToken: token });
+      await apiFetch(`/api/workspace-api-keys/${id}`, { method: "DELETE", accessToken: token });
       setKeys((prev) => prev.filter((k) => k.id !== id));
     } catch (err: any) {
       alert(err.message ?? "Failed to revoke");
