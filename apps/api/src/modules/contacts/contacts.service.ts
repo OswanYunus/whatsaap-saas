@@ -14,12 +14,13 @@ export class ContactsService {
 
     const where = {
       workspaceId: query.workspaceId,
+      status: query.status,
       ...(query.groupName ? { groupName: query.groupName } : {}),
       ...(query.search
         ? {
             OR: [
-              { name: { contains: query.search, mode: "insensitive" as const } },
-              { phone: { contains: query.search } }
+              { fullName: { contains: query.search, mode: "insensitive" as const } },
+              { phoneNumber: { contains: query.search } }
             ]
           }
         : {})
@@ -58,11 +59,40 @@ export class ContactsService {
     return rows.map((r) => r.groupName).filter((g): g is string => Boolean(g));
   }
 
+  async listTags(workspaceId: string, userId: string) {
+    await workspacesService.assertMembership(workspaceId, userId);
+
+    // Collect every tags[] array, flatten, deduplicate, sort
+    const rows = await prisma.contact.findMany({
+      where: { workspaceId },
+      select: { tags: true }
+    });
+
+    const tagSet = new Set<string>();
+    for (const row of rows) {
+      for (const tag of row.tags) {
+        if (tag) tagSet.add(tag);
+      }
+    }
+
+    return Array.from(tagSet).sort();
+  }
+
   async create(input: CreateContactInput, userId: string) {
     await workspacesService.assertMembership(input.workspaceId, userId);
 
+    let cleanPhone = input.phoneNumber.replace(/\D/g, "");
+    if (cleanPhone.startsWith("0")) {
+      cleanPhone = "254" + cleanPhone.slice(1);
+    }
+
     const existing = await prisma.contact.findUnique({
-      where: { workspaceId_phone: { workspaceId: input.workspaceId, phone: input.phone } }
+      where: {
+        workspaceId_phoneNumber: {
+          workspaceId: input.workspaceId,
+          phoneNumber: cleanPhone
+        }
+      }
     });
     if (existing) {
       throw new AppError("A contact with this phone number already exists", 409, "CONTACT_EXISTS");
@@ -71,9 +101,12 @@ export class ContactsService {
     return prisma.contact.create({
       data: {
         workspaceId: input.workspaceId,
-        name: input.name,
-        phone: input.phone,
-        groupName: input.groupName
+        fullName: input.fullName,
+        phoneNumber: cleanPhone,
+        groupName: input.groupName || null,
+        tags: input.tags || [],
+        notes: input.notes || null,
+        status: input.status
       }
     });
   }
@@ -81,31 +114,97 @@ export class ContactsService {
   async bulkImport(input: BulkImportContactInput, userId: string) {
     await workspacesService.assertMembership(input.workspaceId, userId);
 
-    // skipDuplicates relies on the @@unique([workspaceId, phone])
-    // constraint — re-importing the same CSV twice is a safe no-op
-    // for rows that already exist rather than an error.
-    const result = await prisma.contact.createMany({
-      data: input.contacts.map((c) => ({
-        workspaceId: input.workspaceId,
-        name: c.name,
-        phone: c.phone,
-        groupName: c.groupName
-      })),
-      skipDuplicates: true
+    // Fetch existing phone numbers in this workspace to check duplicates
+    const existing = await prisma.contact.findMany({
+      where: { workspaceId: input.workspaceId },
+      select: { phoneNumber: true }
     });
+    const existingSet = new Set(existing.map((c) => c.phoneNumber));
 
-    return { imported: result.count, submitted: input.contacts.length };
+    const toInsert: any[] = [];
+    const seenInBatch = new Set<string>();
+    let duplicatesCount = 0;
+    let invalidCount = 0;
+
+    for (const c of input.contacts) {
+      let cleanPhone = c.phone.replace(/\D/g, "");
+      if (cleanPhone.startsWith("0")) {
+        cleanPhone = "254" + cleanPhone.slice(1);
+      }
+
+      // Basic length check for phone validation
+      if (cleanPhone.length < 8 || cleanPhone.length > 15) {
+        invalidCount++;
+        continue;
+      }
+
+      if (existingSet.has(cleanPhone) || seenInBatch.has(cleanPhone)) {
+        duplicatesCount++;
+        continue;
+      }
+
+      seenInBatch.add(cleanPhone);
+      toInsert.push({
+        workspaceId: input.workspaceId,
+        fullName: c.name,
+        phoneNumber: cleanPhone,
+        groupName: c.groupName || null,
+        tags: [],
+        notes: null,
+        status: "ACTIVE" as const
+      });
+    }
+
+    if (toInsert.length > 0) {
+      await prisma.contact.createMany({
+        data: toInsert
+      });
+    }
+
+    return {
+      imported: toInsert.length,
+      duplicates: duplicatesCount,
+      invalid: invalidCount,
+      skipped: duplicatesCount + invalidCount,
+      submitted: input.contacts.length
+    };
   }
 
   async update(contactId: string, input: UpdateContactInput, userId: string) {
     const contact = await this.findOwned(contactId, userId);
 
+    let cleanPhone = input.phoneNumber;
+    if (cleanPhone) {
+      cleanPhone = cleanPhone.replace(/\D/g, "");
+      if (cleanPhone.startsWith("0")) {
+        cleanPhone = "254" + cleanPhone.slice(1);
+      }
+
+      // Check unique constraint if phone is changing
+      if (cleanPhone !== contact.phoneNumber) {
+        const existing = await prisma.contact.findUnique({
+          where: {
+            workspaceId_phoneNumber: {
+              workspaceId: contact.workspaceId,
+              phoneNumber: cleanPhone
+            }
+          }
+        });
+        if (existing) {
+          throw new AppError("A contact with this phone number already exists", 409, "CONTACT_EXISTS");
+        }
+      }
+    }
+
     return prisma.contact.update({
       where: { id: contact.id },
       data: {
-        name: input.name,
-        phone: input.phone,
-        groupName: input.groupName
+        fullName: input.fullName,
+        phoneNumber: cleanPhone,
+        groupName: input.groupName,
+        tags: input.tags,
+        notes: input.notes,
+        status: input.status
       }
     });
   }

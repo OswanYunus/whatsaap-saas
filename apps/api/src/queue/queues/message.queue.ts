@@ -2,20 +2,24 @@ import { Queue } from "bullmq";
 import { redisConnection } from "../connection";
 
 export const MESSAGE_QUEUE_NAME = "message-send";
+export const CAMPAIGN_SCHEDULER_QUEUE_NAME = "campaign-scheduler";
 
 export interface MessageJobData {
   messageId: string;
   instanceId: string;
   to: string;
   content: string;
+  campaignId?: string;
+  contactId?: string;
+  variables?: Record<string, string>;
+}
+
+export interface CampaignSchedulerJobData {
+  templateId: string;
 }
 
 /**
- * Queue that campaign sends are pushed onto. A route/service enqueues
- * one job per contact rather than sending synchronously, so that:
- *   - Sending thousands of messages doesn't block the HTTP request.
- *   - We get built-in retry/backoff for transient WhatsApp/network errors.
- *   - Send rate can be throttled per instance to respect WhatsApp limits.
+ * Queue that individual message sends are pushed onto.
  */
 export const messageQueue = new Queue<MessageJobData>(MESSAGE_QUEUE_NAME, {
   connection: redisConnection,
@@ -26,3 +30,19 @@ export const messageQueue = new Queue<MessageJobData>(MESSAGE_QUEUE_NAME, {
     removeOnFail: 5000
   }
 });
+
+/**
+ * Queue that manages recurring/scheduled campaign template triggers.
+ */
+export const campaignSchedulerQueue = new Queue<CampaignSchedulerJobData>(
+  CAMPAIGN_SCHEDULER_QUEUE_NAME,
+  {
+    connection: redisConnection,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 5000 },
+      removeOnComplete: 100,
+      removeOnFail: 1000
+    }
+  }
+);

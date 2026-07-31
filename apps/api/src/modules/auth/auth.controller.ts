@@ -12,7 +12,7 @@ export class AuthController {
 
     const accessToken = await reply.jwtSign(
       { sub: user.id, email: user.email },
-      { expiresIn: "15m" }
+      { expiresIn: "30d" }
     );
 
     return reply.status(201).send({
@@ -26,7 +26,7 @@ export class AuthController {
 
     const accessToken = await reply.jwtSign(
       { sub: user.id, email: user.email },
-      { expiresIn: "15m" }
+      { expiresIn: "30d" }
     );
 
     return reply.send({

@@ -19,7 +19,10 @@ export async function apiFetch<T>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
     headers: {
-      "Content-Type": "application/json",
+      // Only attach Content-Type when there is actually a body to send.
+      // Fastify rejects requests where Content-Type is application/json
+      // but the body is empty (e.g. bodyless POST /dispatch calls).
+      ...(rest.body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers
     }

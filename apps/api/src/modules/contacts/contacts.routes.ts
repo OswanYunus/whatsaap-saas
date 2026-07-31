@@ -21,6 +21,11 @@ export default async function contactsRoutes(fastify: FastifyInstance) {
     handler: (request) => contactsController.listGroups(request as never)
   });
 
+  fastify.get("/contacts/tags", {
+    preHandler: [fastify.authenticate],
+    handler: (request) => contactsController.listTags(request as never)
+  });
+
   fastify.post("/contacts", {
     preHandler: [fastify.authenticate],
     handler: (request, reply) => {

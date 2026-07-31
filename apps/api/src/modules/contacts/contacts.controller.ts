@@ -18,6 +18,12 @@ export class ContactsController {
     };
   }
 
+  async listTags(request: FastifyRequest<{ Querystring: { workspaceId: string } }>) {
+    return {
+      tags: await contactsService.listTags(request.query.workspaceId, request.authUser!.id)
+    };
+  }
+
   async create(request: FastifyRequest<{ Body: CreateContactInput }>, reply: FastifyReply) {
     const contact = await contactsService.create(request.body, request.authUser!.id);
     return reply.status(201).send(contact);

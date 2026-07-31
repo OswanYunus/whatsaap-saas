@@ -8,6 +8,8 @@ import InstancesPage from "./pages/InstancesPage";
 import InstanceConnectPage from "./pages/InstanceConnectPage";
 import ContactsPage from "./pages/ContactsPage";
 import CampaignsPage from "./pages/CampaignsPage";
+import CampaignCreatePage from "./pages/CampaignCreatePage";
+import CampaignDetailPage from "./pages/CampaignDetailPage";
 import QueueMonitorPage from "./pages/QueueMonitorPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -32,6 +34,8 @@ export default function AppRouter() {
           <Route path="/instances/connect" element={<InstanceConnectPage />} />
           <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route path="/campaigns/new" element={<CampaignCreatePage />} />
+          <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
           <Route path="/queue" element={<QueueMonitorPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />

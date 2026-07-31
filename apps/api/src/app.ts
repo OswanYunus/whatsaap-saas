@@ -17,9 +17,11 @@ import whatsappRoutes from "./modules/whatsapp/whatsapp.routes";
 import workspacesRoutes from "./modules/workspaces/workspaces.routes";
 import contactsRoutes from "./modules/contacts/contacts.routes";
 import campaignsRoutes from "./modules/campaigns/campaigns.routes";
+import campaignTemplateRoutes from "./modules/campaigns/campaign-template.routes";
 import messagesRoutes from "./modules/messages/messages.routes";
 import apiKeysRoutes from "./modules/api-keys/api-keys.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import workspaceSettingsRoutes from "./modules/workspaces/workspace-settings.routes";
 
 import { whatsappManager } from "./modules/whatsapp/whatsapp.manager";
 
@@ -51,9 +53,11 @@ export async function buildApp() {
   await app.register(workspacesRoutes, { prefix: "/api" });
   await app.register(contactsRoutes, { prefix: "/api" });
   await app.register(campaignsRoutes, { prefix: "/api" });
+  await app.register(campaignTemplateRoutes, { prefix: "/api" });
   await app.register(messagesRoutes, { prefix: "/api" });
   await app.register(apiKeysRoutes, { prefix: "/api" });
   await app.register(dashboardRoutes, { prefix: "/api" });
+  await app.register(workspaceSettingsRoutes, { prefix: "/api" });
 
   app.addHook("onReady", async () => {
     if (process.env.NODE_ENV !== "test") {
