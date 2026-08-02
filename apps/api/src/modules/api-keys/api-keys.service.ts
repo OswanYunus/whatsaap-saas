@@ -1,6 +1,6 @@
 
 import crypto from "node:crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
 import { AppError } from "../../plugins/error-handler";
 import { workspacesService } from "../workspaces/workspaces.service";

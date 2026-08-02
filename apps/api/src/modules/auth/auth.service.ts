@@ -1,9 +1,9 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
 import { AppError } from "../../plugins/error-handler";
 import type { RegisterInput, LoginInput } from "./auth.schema";
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = 10;
 
 /**
  * Business logic for authentication. Kept independent of Fastify so it

@@ -129,14 +129,19 @@ export class WhatsAppManager {
       if (connection === "close") {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         const errorMessage = (lastDisconnect?.error as Error)?.message || "Connection closed";
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        // Stop infinite reconnect loops for QR timeouts (408) or manual logouts
+        const shouldReconnect = 
+          statusCode !== DisconnectReason.loggedOut && 
+          statusCode !== DisconnectReason.connectionClosed &&
+          statusCode !== DisconnectReason.timedOut;
 
         logger.warn(
           `Connection closed for instance ${instanceId}. Status code: ${statusCode}. Reconnecting: ${shouldReconnect}`
         );
 
         if (!shouldReconnect) {
-          // Logged out
+          // Logged out or timed out
           this.reconnectingInstances.delete(instanceId);
           this.sockets.delete(instanceId);
 
@@ -296,10 +301,27 @@ export class WhatsAppManager {
 
   async initialize() {
     logger.info("Initializing active WhatsApp connections...");
+    
+    // Reset any instances that were stuck waiting for user action when the server stopped
+    await prisma.instance.updateMany({
+      where: {
+        status: {
+          in: ["QR_WAITING", "PAIRING_CODE"],
+        },
+      },
+      data: {
+        status: "LOGGED_OUT",
+        qrCodeString: null,
+        qrExpiresAt: null,
+        pairingCode: null,
+      }
+    });
+
+    // Only restore instances that were actually logged in
     const instances = await prisma.instance.findMany({
       where: {
         status: {
-          in: ["CONNECTED", "CONNECTING", "RECONNECTING", "QR_WAITING", "PAIRING_CODE"],
+          in: ["CONNECTED", "CONNECTING", "RECONNECTING"],
         },
       },
     });

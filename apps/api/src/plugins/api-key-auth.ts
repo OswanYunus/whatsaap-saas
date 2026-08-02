@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
 import fp from "fastify-plugin";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";

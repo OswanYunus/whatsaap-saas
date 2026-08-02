@@ -24,6 +24,7 @@ export async function apiFetch<T>(
       // but the body is empty (e.g. bodyless POST /dispatch calls).
       ...(rest.body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      "ngrok-skip-browser-warning": "true",
       ...headers
     }
   });
