@@ -120,7 +120,7 @@ export default function InstanceConnectPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const sseRef = useRef<EventSource | null>(null);
+  const sseRef = useRef<AbortController | null>(null);
 
   // Handle outside clicks to close country dropdown
   useEffect(() => {
@@ -174,7 +174,7 @@ export default function InstanceConnectPage() {
   const startSSE = async (id: string) => {
     // Abort previous connection if exists
     if (sseRef.current) {
-      (sseRef.current as AbortController).abort();
+      sseRef.current.abort();
     }
 
     const abortController = new AbortController();
@@ -244,7 +244,7 @@ export default function InstanceConnectPage() {
   useEffect(() => {
     return () => {
       if (sseRef.current) {
-        (sseRef.current as AbortController).abort();
+        sseRef.current.abort();
       }
     };
   }, []);
