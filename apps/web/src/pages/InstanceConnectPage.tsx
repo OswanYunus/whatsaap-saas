@@ -171,44 +171,80 @@ export default function InstanceConnectPage() {
   };
 
   // Start Live Events connection
-  const startSSE = (id: string) => {
+  const startSSE = async (id: string) => {
+    // Abort previous connection if exists
     if (sseRef.current) {
-      sseRef.current.close();
+      (sseRef.current as AbortController).abort();
     }
 
-    const sse = new EventSource(`${API_BASE_URL}/api/whatsapp/instances/${id}/events?token=${accessToken}`);
-    sseRef.current = sse;
+    const abortController = new AbortController();
+    sseRef.current = abortController as any;
 
-    sse.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.status) {
-          setStatus(data.status);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/whatsapp/instances/${id}/events?token=${accessToken}`, {
+        signal: abortController.signal,
+        headers: {
+          "ngrok-skip-browser-warning": "true"
         }
-        if (data.type === "qr") {
-          setQrCodeUrl(data.qrCodeString);
-          setQrExpiresAt(data.qrExpiresAt);
-        } else if (data.type === "pairing_code") {
-          setPairingCode(data.pairingCode);
-        } else if (data.type === "status" && data.status === "CONNECTED") {
-          sse.close();
-          navigate("/instances");
-        }
-      } catch (err) {
-        console.error("Failed to parse SSE event", err);
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    sse.onerror = () => {
-      console.warn("SSE disconnected, attempting reconnect...");
-    };
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      if (!reader) return;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const dataStr = line.replace("data: ", "").trim();
+            if (!dataStr) continue;
+
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.status) {
+                setStatus(data.status);
+              }
+              if (data.qrCodeString) {
+                setQrCodeUrl(data.qrCodeString);
+              }
+              if (data.qrExpiresAt) {
+                setQrExpiresAt(data.qrExpiresAt);
+              }
+              if (data.pairingCode) {
+                setPairingCode(data.pairingCode);
+              }
+              if (data.status === "CONNECTED") {
+                abortController.abort();
+                navigate("/instances");
+              }
+            } catch (err) {
+              console.error("Failed to parse SSE event", err);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== "AbortError") {
+        console.warn("SSE disconnected, error:", err);
+      }
+    }
   };
 
   // Cleanup SSE on unmount
   useEffect(() => {
     return () => {
       if (sseRef.current) {
-        sseRef.current.close();
+        (sseRef.current as AbortController).abort();
       }
     };
   }, []);
