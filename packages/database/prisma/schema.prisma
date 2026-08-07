@@ -54,11 +54,20 @@ enum AudienceType {
 }
 
 model User {
-  id           String              @id @default(cuid())
-  email        String              @unique
-  passwordHash String
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  id                         String              @id @default(cuid())
+  email                      String              @unique
+  passwordHash               String
+  name                       String              @default("")
+  phoneNumber                String              @default("")
+  isVerified                 Boolean             @default(false)
+  verificationCode           String?
+  verificationCodeExpiresAt  DateTime?
+  resetPasswordCode          String?
+  resetPasswordCodeExpiresAt DateTime?
+  isAdmin                    Boolean             @default(false)
+  isBlocked                  Boolean             @default(false)
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
 
   workspaces   WorkspaceMember[]
 }
@@ -72,7 +81,8 @@ model Workspace {
   instances   Instance[]
   contacts    Contact[]
   campaigns   Campaign[]
-  apiKeys     WorkspaceApiKey[]
+  apiKeys     ApiKey[]
+  apiRequestLogs DeveloperApiRequestLog[]
   templates   CampaignTemplate[]
   settings    WorkspaceSettings?
 }
@@ -124,7 +134,7 @@ model Instance {
 
   workspace     Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  apiKeys       ApiKey[]
+  apiKeys       InstanceApiKey[]
   messages      Message[]
   campaigns     Campaign[]
   templates     CampaignTemplate[]
@@ -144,7 +154,7 @@ model BaileysAuth {
   @@unique([instanceId, key])
 }
 
-model ApiKey {
+model InstanceApiKey {
   id          String      @id @default(cuid())
   instanceId  String
 
@@ -152,10 +162,13 @@ model ApiKey {
   createdAt   DateTime    @default(now())
 
   instance    Instance    @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+
+  @@map("ApiKey")
 }
 
 model Message {
   id            String         @id @default(cuid())
+  publicId      String?        @unique
   instanceId    String
 
   to            String
@@ -208,6 +221,7 @@ model Contact {
 /// Defines a recurring schedule. Each execution spawns a new Campaign run.
 model CampaignTemplate {
   id                String       @id @default(cuid())
+  publicId          String?      @unique
   workspaceId       String
   instanceId        String
 
@@ -238,6 +252,7 @@ model CampaignTemplate {
 
 model Campaign {
   id                String         @id @default(cuid())
+  publicId          String?        @unique
   workspaceId       String
   instanceId        String
 
@@ -274,16 +289,39 @@ model Campaign {
   messages          Message[]
 }
 
-model WorkspaceApiKey {
+model ApiKey {
   id          String    @id @default(cuid())
   workspaceId String
 
-  label       String
+  name        String    @map("label")
   keyHash     String    @unique
   keyPrefix   String
 
   createdAt   DateTime  @default(now())
   lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
 
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  logs        DeveloperApiRequestLog[]
+
+  @@map("WorkspaceApiKey")
+}
+
+model DeveloperApiRequestLog {
+  id           String    @id @default(cuid())
+  workspaceId  String?
+  apiKeyId     String?
+  endpoint     String
+  method       String
+  ip           String?
+  success      Boolean
+  responseCode Int
+  createdAt    DateTime  @default(now())
+
+  workspace    Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  apiKey       ApiKey?    @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([apiKeyId, createdAt])
 }

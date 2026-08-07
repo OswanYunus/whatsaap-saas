@@ -172,10 +172,13 @@ function CerebroTab() {
 /* ─── API Keys Tab ─── */
 interface ApiKey {
   id: string;
-  label: string;
+  name: string;
   keyPrefix: string;
+  maskedKey: string;
   createdAt: string;
   lastUsedAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
 }
 
 function ApiKeysTab() {
@@ -193,8 +196,8 @@ function ApiKeysTab() {
   const fetchKeys = useCallback(async () => {
     if (!workspaceId) return;
     try {
-      const data = await apiFetch<ApiKey[]>(`/api/workspace-api-keys?workspaceId=${workspaceId}`, { accessToken: token });
-      setKeys(data);
+      const data = await apiFetch<{ keys: ApiKey[] }>(`/api/workspace-api-keys?workspaceId=${workspaceId}`, { accessToken: token });
+      setKeys(data.keys);
     } catch {}
     finally { setLoading(false); }
   }, [workspaceId, token]);
@@ -207,7 +210,7 @@ function ApiKeysTab() {
     try {
       const res = await apiFetch<{ rawKey: string } & ApiKey>("/api/workspace-api-keys", {
         method: "POST",
-        body: JSON.stringify({ workspaceId, label: newLabel.trim() }),
+        body: JSON.stringify({ workspaceId, name: newLabel.trim() }),
         accessToken: token
       });
       setRawKey(res.rawKey);
@@ -221,8 +224,8 @@ function ApiKeysTab() {
     }
   };
 
-  const handleRevoke = async (id: string, label: string) => {
-    if (!confirm(`Revoke key "${label}"? This cannot be undone.`)) return;
+  const handleRevoke = async (id: string, name: string) => {
+    if (!confirm(`Revoke key "${name}"? This cannot be undone.`)) return;
     try {
       await apiFetch(`/api/workspace-api-keys/${id}`, { method: "DELETE", accessToken: token });
       setKeys((prev) => prev.filter((k) => k.id !== id));
@@ -302,15 +305,17 @@ function ApiKeysTab() {
           {keys.map((key) => (
             <div key={key.id} className="flex items-center justify-between px-3 py-2.5 transition-colors hover:bg-ink-50/50 dark:hover:bg-white/10">
               <div>
-                <div className="text-[13px] font-medium text-ink-800 dark:text-white">{key.label}</div>
+                <div className="text-[13px] font-medium text-ink-800 dark:text-white">{key.name}</div>
                 <div className="text-2xs text-ink-400">
-                  <code className="font-mono">{key.keyPrefix}…</code>
+                  <code className="font-mono">{key.maskedKey}</code>
                   {" · "}Created {new Date(key.createdAt).toLocaleDateString()}
                   {key.lastUsedAt && ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}
+                  {key.revokedAt && " · Revoked"}
                 </div>
               </div>
               <button
-                onClick={() => handleRevoke(key.id, key.label)}
+                onClick={() => handleRevoke(key.id, key.name)}
+                disabled={Boolean(key.revokedAt)}
                 className="btn-ghost h-7 w-7 p-0 hover:text-red-600 dark:hover:text-red-400"
                 title="Revoke key"
               >

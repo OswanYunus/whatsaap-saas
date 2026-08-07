@@ -21,8 +21,6 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/", { replace: true });
     } catch (err) {
-      // See RegisterPage for why we show err.message unconditionally
-      // rather than only for ApiError instances.
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);
     } finally {
@@ -37,7 +35,7 @@ export default function LoginPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-ink-800 text-white dark:bg-accent-500 dark:text-ink-900">
             <MessageCircle size={16} strokeWidth={2.5} />
           </span>
-          <span className="text-sm font-semibold text-ink-800 dark:text-white">WA Automation</span>
+          <span className="text-sm font-semibold text-ink-800 dark:text-white">Tukonnect digital</span>
         </div>
 
         <div className="card p-8">
@@ -70,6 +68,15 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
             />
+
+            <div className="flex justify-end">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-accent-600 hover:underline dark:text-accent-400"
+              >
+                Forgot password?
+              </Link>
+            </div>
 
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
               {isSubmitting ? "Logging in..." : "Log in"}

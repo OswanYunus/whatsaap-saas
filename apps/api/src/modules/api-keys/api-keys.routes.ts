@@ -23,4 +23,9 @@ export default async function apiKeysRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate],
     handler: (request) => apiKeysController.revoke(request as never)
   });
+
+  fastify.post("/workspace-api-keys/:id/revoke", {
+    preHandler: [fastify.authenticate],
+    handler: (request) => apiKeysController.revoke(request as never)
+  });
 }

@@ -4,7 +4,8 @@ const cuid = z.string().cuid("Must be a valid id");
 
 export const createApiKeySchema = z.object({
   workspaceId: cuid,
-  label: z.string().min(1).max(60)
+  name: z.string().min(1).max(60),
+  expiresAt: z.string().datetime().optional().nullable()
 });
 export type CreateApiKeyInput = z.infer<typeof createApiKeySchema>;
 

@@ -15,7 +15,8 @@ export interface MessageJobData {
 }
 
 export interface CampaignSchedulerJobData {
-  templateId: string;
+  templateId?: string;
+  campaignId?: string;
 }
 
 /**

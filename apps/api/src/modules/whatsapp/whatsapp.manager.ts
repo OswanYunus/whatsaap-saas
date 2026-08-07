@@ -130,18 +130,19 @@ export class WhatsAppManager {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         const errorMessage = (lastDisconnect?.error as Error)?.message || "Connection closed";
         
-        // Stop infinite reconnect loops for QR timeouts (408) or manual logouts
-        const shouldReconnect = 
-          statusCode !== DisconnectReason.loggedOut && 
-          statusCode !== DisconnectReason.connectionClosed &&
-          statusCode !== DisconnectReason.timedOut;
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        const isRegistered = Boolean(socket.authState.creds.registered);
+
+        // Only a real WhatsApp logout should clear saved credentials. Network
+        // closures/timeouts are common for long-running Baileys sessions and
+        // should reconnect, otherwise users are forced to scan again.
+        const shouldReconnect = !isLoggedOut && isRegistered;
 
         logger.warn(
           `Connection closed for instance ${instanceId}. Status code: ${statusCode}. Reconnecting: ${shouldReconnect}`
         );
 
         if (!shouldReconnect) {
-          // Logged out or timed out
           this.reconnectingInstances.delete(instanceId);
           this.sockets.delete(instanceId);
 
@@ -156,11 +157,12 @@ export class WhatsAppManager {
             lastError: errorMessage,
           });
 
-          // Clear auth rows
-          try {
-            await prisma.baileysAuth.deleteMany({ where: { instanceId } });
-          } catch (err) {
-            logger.error(err, "Failed to clear auth state");
+          if (isLoggedOut) {
+            try {
+              await prisma.baileysAuth.deleteMany({ where: { instanceId } });
+            } catch (err) {
+              logger.error(err, "Failed to clear auth state");
+            }
           }
 
           whatsappEvents.emit(`events:${instanceId}`, {

@@ -1,4 +1,3 @@
-
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
@@ -13,20 +12,26 @@ export class ApiKeysService {
   async list(workspaceId: string, userId: string) {
     await workspacesService.assertMembership(workspaceId, userId);
 
-    return prisma.workspaceApiKey.findMany({
+    const keys = await prisma.apiKey.findMany({
       where: { workspaceId },
       orderBy: { createdAt: "desc" },
-      // keyHash is intentionally never selected — it should never
-      // leave the database once created.
-      select: { id: true, label: true, keyPrefix: true, createdAt: true, lastUsedAt: true }
+      select: {
+        id: true,
+        name: true,
+        keyPrefix: true,
+        createdAt: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        revokedAt: true
+      }
     });
+
+    return keys.map((key) => ({
+      ...key,
+      maskedKey: `****************${key.keyPrefix.slice(-4)}`
+    }));
   }
 
-  /**
-   * Creates a new key and returns the raw value exactly once. Only
-   * the bcrypt hash + a short display prefix are persisted; the raw
-   * key cannot be recovered after this call returns.
-   */
   async create(input: CreateApiKeyInput, userId: string) {
     await workspacesService.assertMembership(input.workspaceId, userId);
 
@@ -34,33 +39,40 @@ export class ApiKeysService {
     const keyHash = await bcrypt.hash(rawKey, SALT_ROUNDS);
     const keyPrefix = rawKey.slice(0, 12);
 
-    const record = await prisma.workspaceApiKey.create({
+    const record = await prisma.apiKey.create({
       data: {
         workspaceId: input.workspaceId,
-        label: input.label,
+        name: input.name,
         keyHash,
-        keyPrefix
+        keyPrefix,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null
       }
     });
 
     return {
       id: record.id,
-      label: record.label,
+      name: record.name,
       keyPrefix: record.keyPrefix,
+      maskedKey: `****************${record.keyPrefix.slice(-4)}`,
       createdAt: record.createdAt,
-      // Only present in this one response.
+      expiresAt: record.expiresAt,
+      revokedAt: record.revokedAt,
       rawKey
     };
   }
 
   async revoke(keyId: string, userId: string) {
-    const key = await prisma.workspaceApiKey.findUnique({ where: { id: keyId } });
+    const key = await prisma.apiKey.findUnique({ where: { id: keyId } });
     if (!key) {
       throw new AppError("API key not found", 404, "API_KEY_NOT_FOUND");
     }
     await workspacesService.assertMembership(key.workspaceId, userId);
 
-    await prisma.workspaceApiKey.delete({ where: { id: keyId } });
+    await prisma.apiKey.update({
+      where: { id: keyId },
+      data: { revokedAt: new Date() }
+    });
+
     return { id: keyId, revoked: true };
   }
 }

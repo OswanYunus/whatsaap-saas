@@ -24,6 +24,8 @@ import apiKeysRoutes from "./modules/api-keys/api-keys.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import workspaceSettingsRoutes from "./modules/workspaces/workspace-settings.routes";
 import publicSendRoutes from "./modules/public/public-send.routes";
+import developerApiRoutes from "./modules/developer-api/developer-api.routes";
+import adminRoutes from "./modules/admin/admin.routes";
 
 import { whatsappManager } from "./modules/whatsapp/whatsapp.manager";
 
@@ -61,7 +63,9 @@ export async function buildApp() {
   await app.register(apiKeysRoutes, { prefix: "/api" });
   await app.register(dashboardRoutes, { prefix: "/api" });
   await app.register(workspaceSettingsRoutes, { prefix: "/api" });
+  await app.register(developerApiRoutes, { prefix: "/api/v1" });
   await app.register(publicSendRoutes, { prefix: "/api" });
+  await app.register(adminRoutes, { prefix: "/api" });
 
   app.addHook("onReady", async () => {
     if (process.env.NODE_ENV !== "test") {

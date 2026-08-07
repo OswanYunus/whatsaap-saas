@@ -12,6 +12,9 @@ import { apiFetch } from "../lib/api";
 export interface AuthUser {
   id: string;
   email: string;
+  name?: string;
+  phoneNumber?: string;
+  isAdmin?: boolean;
 }
 
 export interface WorkspaceSummary {
@@ -24,9 +27,17 @@ interface LoginResponse {
   accessToken: string;
 }
 
+interface RegisterResponse {
+  user: { id: string; email: string; name: string; isVerified: boolean };
+  message: string;
+}
+
 interface MeResponse {
   id: string;
   email: string;
+  name: string;
+  phoneNumber: string;
+  isAdmin: boolean;
   workspaces: WorkspaceSummary[];
   createdAt: string;
 }
@@ -35,12 +46,14 @@ interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;
   workspaces: WorkspaceSummary[];
-  /** The workspace every other module's API calls should scope to. */
   workspaceId: string | null;
-  /** True while restoring a session from a stored token on first load. */
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, workspaceName: string) => Promise<void>;
+  register: (email: string, password: string, workspaceName: string, name: string, phoneNumber: string) => Promise<{ email: string }>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  forgotPassword: (phoneNumber: string) => Promise<void>;
+  verifyResetCode: (phoneNumber: string, code: string) => Promise<void>;
+  resetPassword: (phoneNumber: string, code: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -48,21 +61,6 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const TOKEN_STORAGE_KEY = "waas-access-token";
 
-/**
- * Owns the whole auth lifecycle: login/register calls, session
- * restoration on page load, and exposes `workspaceId` so every other
- * module (Contacts, Campaigns, Dashboard, ...) can read it directly
- * from useAuth() instead of threading it through props.
- *
- * The access token is persisted in localStorage so a page refresh
- * doesn't log the user out. The backend only issues a short-lived
- * (15m) access token with no refresh-token/rotation endpoint yet —
- * that's a known gap (see README "stubbed" list), so sessions will
- * silently expire after 15 minutes until that's built. Storing in
- * localStorage (vs. memory-only) is a deliberate tradeoff for a
- * usable MVP; moving to an httpOnly refresh cookie is the natural
- * next step once the backend supports it.
- */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -70,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const applySession = useCallback((nextUser: AuthUser, token: string, me: MeResponse) => {
-    setUser(nextUser);
+    setUser({ ...nextUser, name: me.name, phoneNumber: me.phoneNumber, isAdmin: me.isAdmin });
     setAccessToken(token);
     setWorkspaces(me.workspaces);
     window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
@@ -83,9 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
   }, []);
 
-  // On first load, try to restore a session from a previously stored
-  // token. GET /users/me both validates the token and returns the
-  // profile in one call.
   useEffect(() => {
     const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!stored) {
@@ -112,15 +107,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (email: string, password: string, workspaceName: string) => {
-      const { user: newUser, accessToken: token } = await apiFetch<LoginResponse>(
+    async (email: string, password: string, workspaceName: string, name: string, phoneNumber: string) => {
+      const result = await apiFetch<RegisterResponse>(
         "/api/auth/register",
-        { method: "POST", body: JSON.stringify({ email, password, workspaceName }) }
+        { method: "POST", body: JSON.stringify({ email, password, workspaceName, name, phoneNumber }) }
+      );
+      // Return email so frontend can redirect to verify page
+      return { email: result.user.email };
+    },
+    []
+  );
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      const { user: verifiedUser, accessToken: token } = await apiFetch<LoginResponse>(
+        "/api/auth/verify-email",
+        { method: "POST", body: JSON.stringify({ email, code }) }
       );
       const me = await apiFetch<MeResponse>("/api/users/me", { accessToken: token });
-      applySession(newUser, token, me);
+      applySession(verifiedUser, token, me);
     },
     [applySession]
+  );
+
+  const forgotPassword = useCallback(
+    async (phoneNumber: string) => {
+      await apiFetch("/api/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber })
+      });
+    },
+    []
+  );
+
+  const verifyResetCode = useCallback(
+    async (phoneNumber: string, code: string) => {
+      await apiFetch("/api/auth/verify-reset-code", {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber, code })
+      });
+    },
+    []
+  );
+
+  const resetPassword = useCallback(
+    async (phoneNumber: string, code: string, password: string) => {
+      await apiFetch("/api/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ phoneNumber, code, password })
+      });
+    },
+    []
   );
 
   const logout = useCallback(() => clearSession(), [clearSession]);
@@ -134,9 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       register,
+      verifyEmail,
+      forgotPassword,
+      verifyResetCode,
+      resetPassword,
       logout
     }),
-    [user, accessToken, workspaces, isLoading, login, register, logout]
+    [user, accessToken, workspaces, isLoading, login, register, verifyEmail, forgotPassword, verifyResetCode, resetPassword, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

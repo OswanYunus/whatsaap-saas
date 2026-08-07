@@ -31,7 +31,7 @@ interface QueueHealth {
 }
 
 export default function DashboardPage() {
-  const { accessToken, workspaceId, workspaces } = useAuth();
+  const { accessToken, workspaceId, workspaces, user } = useAuth();
   const token = accessToken ?? undefined;
   const workspaceName = workspaces[0]?.name ?? "Workspace";
 
@@ -76,7 +76,7 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div className="page-header">
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">Welcome Back, {user?.name || user?.email?.split('@')[0] || 'there'} 👋</h1>
           <p className="page-subtitle">
             {workspaceName} · {now}
           </p>

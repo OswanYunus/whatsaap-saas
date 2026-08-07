@@ -5,7 +5,7 @@ import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 interface Country {
   name: string;
@@ -517,85 +517,105 @@ export default function InstanceConnectPage() {
             <StatusBadge status={status} pulse={status !== "CONNECTED"} />
           </div>
 
-          {/* QR Code Layout */}
-          {method === "qr" && (
-            <div className="space-y-4 flex flex-col items-center">
-              <div className="relative border border-ink-100 dark:border-white/10 rounded-xl p-3 bg-white w-56 h-56 flex items-center justify-center">
-                {qrCodeUrl ? (
-                  <>
-                    <img src={qrCodeUrl} alt="WhatsApp Pairing QR Code" className={`w-full h-full rounded-md ${isQrExpired ? "opacity-10" : ""}`} />
-                    {isQrExpired && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-canvas-dark/95 p-4 rounded-xl">
-                        <AlertCircle size={24} className="text-red-500 mb-2" />
-                        <span className="text-xs font-semibold text-ink-800 dark:text-white">QR Code Expired</span>
-                        <button onClick={handleRefreshQR} className="btn-accent text-3xs py-1 px-2.5 mt-2.5">
-                          Refresh Code
-                        </button>
+          {/* Device connected or connecting — collapse code UI */}
+          {(status === "CONNECTED" || status === "CONNECTING" || status === "RECONNECTING") ? (
+            <div className="flex flex-col items-center gap-4 py-6">
+              {status === "CONNECTED" ? (
+                <>
+                  <CheckCircle2 size={56} className="text-green-500" />
+                  <div>
+                    <p className="text-base font-semibold text-ink-800 dark:text-white">Device connected!</p>
+                    <p className="text-sm text-ink-400 mt-1">Redirecting to your instances...</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="relative flex h-16 w-16 items-center justify-center">
+                    <RefreshCw size={32} className="animate-spin text-accent-500" />
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-ink-800 dark:text-white">Connecting device...</p>
+                    <p className="text-sm text-ink-400 mt-1">Your phone is linking — please wait.</p>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* QR Code Layout */}
+              {method === "qr" && (
+                <div className="space-y-4 flex flex-col items-center">
+                  <div className="relative border border-ink-100 dark:border-white/10 rounded-xl p-3 bg-white w-56 h-56 flex items-center justify-center">
+                    {qrCodeUrl ? (
+                      <>
+                        <img src={qrCodeUrl} alt="WhatsApp Pairing QR Code" className={`w-full h-full rounded-md ${isQrExpired ? "opacity-10" : ""}`} />
+                        {isQrExpired && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-canvas-dark/95 p-4 rounded-xl">
+                            <AlertCircle size={24} className="text-red-500 mb-2" />
+                            <span className="text-xs font-semibold text-ink-800 dark:text-white">QR Code Expired</span>
+                            <button onClick={handleRefreshQR} className="btn-accent text-3xs py-1 px-2.5 mt-2.5">
+                              Refresh Code
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-ink-400 space-y-2">
+                        <RefreshCw size={24} className="animate-spin text-accent-500" />
+                        <span className="text-3xs">Generating QR code...</span>
                       </div>
                     )}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-ink-400 space-y-2">
-                    <RefreshCw size={24} className="animate-spin text-accent-500" />
-                    <span className="text-3xs">Generating QR code...</span>
                   </div>
-                )}
-              </div>
 
-              {qrCodeUrl && !isQrExpired && (
-                <div className="space-y-1">
-                  <div className="w-56 progress-track mx-auto">
-                    <div className="progress-fill" style={{ width: `${(timeLeft / 40) * 100}%` }} />
-                  </div>
-                  <span className="text-3xs text-ink-400">QR refreshes in {timeLeft} seconds.</span>
+                  {qrCodeUrl && !isQrExpired && (
+                    <div className="space-y-1">
+                      <div className="w-56 progress-track mx-auto">
+                        <div className="progress-fill" style={{ width: `${(timeLeft / 40) * 100}%` }} />
+                      </div>
+                      <span className="text-3xs text-ink-400">QR refreshes in {timeLeft} seconds.</span>
+                    </div>
+                  )}
+
+                  <p className="max-w-xs text-2xs leading-relaxed text-ink-400 mt-2">
+                    Open WhatsApp on your phone → <span className="font-semibold text-ink-600 dark:text-ink-300">Settings → Linked Devices → Link a Device</span>, then scan this QR code.
+                  </p>
                 </div>
               )}
 
-              <p className="max-w-xs text-2xs leading-relaxed text-ink-400 mt-2">
-                Open WhatsApp on your phone → <span className="font-semibold text-ink-600 dark:text-ink-300">Settings → Linked Devices → Link a Device</span>, then scan this QR code.
-              </p>
-            </div>
-          )}
+              {/* Pairing Code Layout */}
+              {method === "phone" && (
+                <div className="space-y-5 flex flex-col items-center">
+                  <div className="border border-ink-100 dark:border-white/10 rounded-xl p-4 bg-ink-50/50 dark:bg-white/5 w-64 text-center">
+                    {pairingCode ? (
+                      <div className="space-y-2.5">
+                        <div className="text-[26px] tracking-[6px] font-mono font-bold text-accent-600 dark:text-accent-400">
+                          {pairingCode}
+                        </div>
+                        <div className="text-3xs text-ink-400">Use this code on your mobile device.</div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-ink-400 py-3 space-y-2">
+                        <RefreshCw size={20} className="animate-spin text-accent-500" />
+                        <span className="text-3xs">Generating code...</span>
+                      </div>
+                    )}
+                  </div>
 
-          {/* Pairing Code Layout */}
-          {method === "phone" && (
-            <div className="space-y-5 flex flex-col items-center">
-              <div className="border border-ink-100 dark:border-white/10 rounded-xl p-4 bg-ink-50/50 dark:bg-white/5 w-64 text-center">
-                {pairingCode ? (
-                  <div className="space-y-2.5">
-                    <div className="text-[26px] tracking-[6px] font-mono font-bold text-accent-600 dark:text-accent-400">
-                      {pairingCode}
-                    </div>
-                    <div className="text-3xs text-ink-400">Use this code on your mobile device.</div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-ink-400 py-3 space-y-2">
-                    <RefreshCw size={20} className="animate-spin text-accent-500" />
-                    <span className="text-3xs">Generating code...</span>
-                  </div>
-                )}
+                  <p className="max-w-xs text-2xs leading-relaxed text-ink-400 text-left">
+                    1. Open WhatsApp on your phone.<br />
+                    2. Tap <span className="font-semibold">Linked Devices → Link a Device → Link with phone number instead</span>.<br />
+                    3. Enter the 8-character code shown above.
+                  </p>
+                </div>
+              )}
+
+              <div className="text-3xs text-ink-400 flex items-center justify-center gap-1 animate-pulse">
+                <RefreshCw size={10} className="animate-spin" /> Waiting for connection confirmation...
               </div>
-
-              <p className="max-w-xs text-2xs leading-relaxed text-ink-400 text-left">
-                1. Open WhatsApp on your phone.<br />
-                2. Tap <span className="font-semibold">Linked Devices → Link a Device → Link with phone number instead</span>.<br />
-                3. Enter the 8-character code shown above.
-              </p>
-            </div>
-          )}
-
-          {status === "CONNECTED" ? (
-            <div className="flex items-center justify-center gap-1.5 text-accent-600 dark:text-accent-400 text-xs font-semibold py-2">
-              <CheckCircle2 size={16} /> Device connected successfully! Redirecting...
-            </div>
-          ) : (
-            <div className="text-3xs text-ink-400 flex items-center justify-center gap-1 animate-pulse">
-              <RefreshCw size={10} className="animate-spin" /> Waiting for connection confirmation...
-            </div>
+            </>
           )}
         </div>
       )}
     </div>
   );
 }
-

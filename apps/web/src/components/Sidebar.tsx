@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, LayoutDashboard, ListTree, MessageCircle, Settings, Smartphone, Users } from "lucide-react";
+import { BarChart3, Code2, LayoutDashboard, ListTree, MessageCircle, Settings, Shield, Smartphone, Users } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -8,10 +9,14 @@ const navItems = [
   { to: "/contacts", label: "Contacts", icon: Users },
   { to: "/queue", label: "Queue", icon: ListTree },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/developer-api", label: "Developer API", icon: Code2 },
   { to: "/settings", label: "Settings", icon: Settings }
 ];
 
 export default function Sidebar() {
+  const { user } = useAuth();
+  const isAdmin = user?.isAdmin ?? false;
+
   return (
     <aside className="hidden w-[220px] shrink-0 flex-col border-r border-ink-100/80 bg-surface sm:flex dark:border-white/10 dark:bg-surface-dark">
       <div className="flex h-12 items-center gap-2.5 px-4">
@@ -19,7 +24,7 @@ export default function Sidebar() {
           <MessageCircle size={13} strokeWidth={2.5} />
         </span>
         <span className="text-[13px] font-semibold tracking-tight text-ink-800 dark:text-white">
-          WA Automation
+          Tukonnect digital
         </span>
       </div>
 
@@ -37,10 +42,28 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
+
+        {/* Admin link only visible to super users */}
+        {isAdmin && (
+          <>
+            <div className="my-1 border-t border-ink-100/60 dark:border-white/10" />
+            <NavLink to="/admin" className="block">
+              {({ isActive }) => (
+                <span
+                  className={`nav-item ${isActive ? "nav-item-active" : "nav-item-inactive"}`}
+                >
+                  {isActive && <span className="nav-indicator" aria-hidden />}
+                  <Shield size={15} strokeWidth={isActive ? 2.25 : 1.75} className="shrink-0 opacity-80 text-accent-500" />
+                  Admin Dashboard
+                </span>
+              )}
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="border-t border-ink-100/60 px-4 py-3 dark:border-white/10">
-        <p className="text-2xs text-ink-400 dark:text-ink-500">WhatsApp SaaS v0.1</p>
+        <p className="text-2xs text-ink-400 dark:text-ink-500">Tukonnect digital v1.0</p>
       </div>
     </aside>
   );

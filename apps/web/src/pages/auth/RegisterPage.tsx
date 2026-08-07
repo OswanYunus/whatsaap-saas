@@ -8,6 +8,8 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,11 +22,13 @@ export default function RegisterPage() {
 
   const canSubmit = useMemo(
     () =>
+      name.trim().length >= 2 &&
+      phoneNumber.trim().length >= 8 &&
       workspaceName.trim().length > 0 &&
       email.trim().length > 0 &&
       password.length >= 8 &&
       confirmPassword === password,
-    [workspaceName, email, password, confirmPassword]
+    [name, phoneNumber, workspaceName, email, password, confirmPassword]
   );
 
   const handleSubmit = async (e: FormEvent) => {
@@ -38,14 +42,10 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      await register(email, password, workspaceName);
-      navigate("/", { replace: true });
+      const result = await register(email, password, workspaceName, name, phoneNumber);
+      // Redirect to verify email page instead of dashboard
+      navigate(`/verify-email?email=${encodeURIComponent(result.email)}`, { replace: true });
     } catch (err) {
-      // Surface the real reason instead of a generic message — an
-      // ApiError carries the backend's message (e.g. "email already
-      // exists"); anything else (TypeError from a failed fetch, a
-      // CORS rejection, the API being unreachable) still has a
-      // .message worth showing rather than hiding it.
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);
     } finally {
@@ -60,7 +60,7 @@ export default function RegisterPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-ink-800 text-white dark:bg-accent-500 dark:text-ink-900">
             <MessageCircle size={16} strokeWidth={2.5} />
           </span>
-          <span className="text-sm font-semibold text-ink-800 dark:text-white">WA Automation</span>
+          <span className="text-sm font-semibold text-ink-800 dark:text-white">Tukonnect digital</span>
         </div>
 
         <div className="card p-8">
@@ -73,13 +73,38 @@ export default function RegisterPage() {
                 {error}
               </div>
             )}
+
+            <div>
+              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Full Name</label>
+              <input
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="John Doe"
+                className="input mt-1.5"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Phone Number</label>
+              <input
+                type="tel"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+254791584056"
+                className="input mt-1.5 font-mono"
+              />
+              <p className="mt-1 text-xs text-ink-400">Include country code. Used to receive verification codes via WhatsApp.</p>
+            </div>
+
             <div>
               <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Workspace name</label>
               <input
                 required
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
-                placeholder="Musi's Collection"
+                placeholder="My Business"
                 className="input mt-1.5"
               />
             </div>

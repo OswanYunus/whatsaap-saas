@@ -1,62 +1,87 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
 import fp from "fastify-plugin";
-import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 
-/**
- * Adds `fastify.authenticateApiKey` — a preHandler that accepts
- * `Authorization: Bearer wak_xxx` workspace API keys in addition to
- * the existing JWT-based `fastify.authenticate`.
- *
- * On success it sets `request.apiWorkspaceId` so downstream handlers
- * know which workspace the key belongs to.
- */
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 100;
+const buckets = new Map<string, { count: number; resetAt: number }>();
+
 declare module "fastify" {
   interface FastifyInstance {
-    authenticateApiKey: (request: FastifyRequest, reply: import("fastify").FastifyReply) => Promise<void>;
+    authenticateApiKey: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
   interface FastifyRequest {
     apiWorkspaceId?: string;
+    apiKeyId?: string;
   }
 }
 
 const apiKeyAuthPlugin: FastifyPluginAsync = async (fastify) => {
-  fastify.decorate("authenticateApiKey", async (request: FastifyRequest, reply: import("fastify").FastifyReply) => {
-    const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
+  fastify.decorate("authenticateApiKey", async (request: FastifyRequest, reply: FastifyReply) => {
+    const rawHeader = request.headers["x-api-key"];
+    const rawKey = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+
+    if (!rawKey) {
       return reply.status(401).send({ error: { message: "Missing API key", code: "MISSING_API_KEY" } });
     }
 
-    const rawKey = authHeader.slice(7).trim();
-
-    // Key prefix is the first 12 chars — use it to narrow DB lookup
-    const prefix = rawKey.slice(0, 12);
-    const candidates = await prisma.workspaceApiKey.findMany({
-      where: { keyPrefix: prefix }
+    const key = rawKey.trim();
+    const candidates = await prisma.apiKey.findMany({
+      where: {
+        keyPrefix: key.slice(0, 12),
+        revokedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
+      }
     });
 
-    if (candidates.length === 0) {
-      return reply.status(401).send({ error: { message: "Invalid API key", code: "INVALID_API_KEY" } });
-    }
-
-    // Verify the full key against each candidate hash
-    let matched: typeof candidates[0] | null = null;
+    let matched: (typeof candidates)[number] | null = null;
     for (const candidate of candidates) {
-      const valid = await bcrypt.compare(rawKey, candidate.keyHash);
-      if (valid) { matched = candidate; break; }
+      if (await bcrypt.compare(key, candidate.keyHash)) {
+        matched = candidate;
+        break;
+      }
     }
 
     if (!matched) {
       return reply.status(401).send({ error: { message: "Invalid API key", code: "INVALID_API_KEY" } });
     }
 
-    // Stamp last-used timestamp (fire-and-forget)
-    prisma.workspaceApiKey.update({
+    const now = Date.now();
+    const bucket = buckets.get(matched.id);
+    if (!bucket || bucket.resetAt <= now) {
+      buckets.set(matched.id, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    } else if (bucket.count >= RATE_LIMIT_MAX) {
+      return reply.status(429).send({ error: { message: "Rate limit exceeded", code: "RATE_LIMIT_EXCEEDED" } });
+    } else {
+      bucket.count += 1;
+    }
+
+    prisma.apiKey.update({
       where: { id: matched.id },
       data: { lastUsedAt: new Date() }
     }).catch(() => {});
 
     request.apiWorkspaceId = matched.workspaceId;
+    request.apiKeyId = matched.id;
+  });
+
+  fastify.addHook("onResponse", async (request, reply) => {
+    if (!request.url.startsWith("/api/v1/")) return;
+
+    await prisma.developerApiRequestLog.create({
+      data: {
+        workspaceId: request.apiWorkspaceId,
+        apiKeyId: request.apiKeyId,
+        endpoint: request.routeOptions.url ?? request.url.split("?")[0],
+        method: request.method,
+        ip: request.ip,
+        success: reply.statusCode < 400,
+        responseCode: reply.statusCode
+      }
+    }).catch((err) => {
+      request.log.warn({ err }, "Failed to write Developer API request log");
+    });
   });
 };
 

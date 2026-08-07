@@ -11,6 +11,7 @@ import { whatsappService } from "../../modules/whatsapp/whatsapp.service";
 import { prisma } from "@waas/database";
 import { renderTemplate } from "../../lib/template-engine";
 import { campaignTemplateService } from "../../modules/campaigns/campaign-template.service";
+import { campaignsService } from "../../modules/campaigns/campaigns.service";
 
 /**
  * Message send worker — consumes individual message jobs from the queue.
@@ -74,9 +75,17 @@ const messageWorker = new Worker<MessageJobData>(
 const campaignSchedulerWorker = new Worker<CampaignSchedulerJobData>(
   CAMPAIGN_SCHEDULER_QUEUE_NAME,
   async (job) => {
-    const { templateId } = job.data;
-    logger.info({ templateId }, "Triggering scheduled campaign template run");
-    await campaignTemplateService.scheduleNextRun(templateId);
+    const { templateId, campaignId } = job.data;
+    if (campaignId) {
+      logger.info({ campaignId }, "Dispatching scheduled campaign");
+      await campaignsService.dispatch(campaignId, "SYSTEM");
+      return;
+    }
+
+    if (templateId) {
+      logger.info({ templateId }, "Triggering scheduled campaign template run");
+      await campaignTemplateService.scheduleNextRun(templateId);
+    }
   },
   { connection: redisConnection, concurrency: 2 }
 );

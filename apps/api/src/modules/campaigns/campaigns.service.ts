@@ -1,4 +1,5 @@
 import { prisma } from "@waas/database";
+import crypto from "node:crypto";
 import { AppError } from "../../plugins/error-handler";
 import { workspacesService } from "../workspaces/workspaces.service";
 import { messageQueue } from "../../queue/queues/message.queue";
@@ -80,7 +81,9 @@ export class CampaignsService {
   }
 
   async create(input: CreateCampaignInput, userId: string) {
-    await workspacesService.assertMembership(input.workspaceId, userId);
+    if (userId !== "SYSTEM") {
+      await workspacesService.assertMembership(input.workspaceId, userId);
+    }
 
     const instance = await prisma.instance.findFirst({
       where: { id: input.instanceId, workspaceId: input.workspaceId }
@@ -93,6 +96,7 @@ export class CampaignsService {
 
     const campaign = await prisma.campaign.create({
       data: {
+        publicId: `camp_${crypto.randomBytes(12).toString("hex")}`,
         workspaceId: input.workspaceId,
         instanceId: input.instanceId,
         name: input.name,
@@ -395,6 +399,7 @@ export class CampaignsService {
 
     return {
       id: campaign.id,
+      publicId: campaign.publicId,
       name: campaign.name,
       notes: campaign.notes,
       instanceId: campaign.instanceId,
