@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle, RefreshCw, CheckCircle2, KeyRound, Smartphone } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
+import PhoneInput from "../../components/PhoneInput";
 
 type Step = "phone" | "code" | "newpass" | "done";
 
@@ -104,17 +105,10 @@ export default function ForgotPasswordPage() {
                     {error}
                   </div>
                 )}
-                <div>
-                  <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Phone Number</label>
-                  <input
-                    type="tel"
-                    required
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+254791584056"
-                    className="input mt-1.5 font-mono"
-                  />
-                </div>
+                <PhoneInput
+                  label="Phone Number"
+                  onChange={setPhoneNumber}
+                />
                 <button type="submit" disabled={isSubmitting} className="btn-primary w-full flex items-center justify-center gap-2">
                   {isSubmitting ? <><RefreshCw size={16} className="animate-spin" /> Sending...</> : "Send Reset Code"}
                 </button>

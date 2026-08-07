@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
+import PhoneInput from "../../components/PhoneInput";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -85,18 +86,10 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Phone Number</label>
-              <input
-                type="tel"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+254791584056"
-                className="input mt-1.5 font-mono"
-              />
-              <p className="mt-1 text-xs text-ink-400">Include country code. Used to receive verification codes via WhatsApp.</p>
-            </div>
+            <PhoneInput
+              label="Phone Number"
+              onChange={setPhoneNumber}
+            />
 
             <div>
               <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Workspace name</label>
