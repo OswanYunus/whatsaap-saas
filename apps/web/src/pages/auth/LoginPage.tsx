@@ -45,7 +45,17 @@ export default function LoginPage() {
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-                {error}
+                <span>{error}</span>
+                {error.includes("verified") && (
+                  <div className="mt-1.5 pt-1.5 border-t border-red-200/50 dark:border-red-500/20">
+                    <Link
+                      to={`/verify-email?email=${encodeURIComponent(email)}`}
+                      className="font-semibold text-accent-700 hover:underline dark:text-accent-400"
+                    >
+                      Click here to verify your account →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             <div>

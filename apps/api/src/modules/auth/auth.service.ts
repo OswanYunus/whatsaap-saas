@@ -106,6 +106,45 @@ export class AuthService {
     });
   }
 
+  async resendVerification(email: string) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new AppError("Account not found", 404, "NOT_FOUND");
+    }
+
+    if (user.isVerified) {
+      throw new AppError("Account is already verified", 400, "BAD_REQUEST");
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode,
+        verificationCodeExpiresAt
+      }
+    });
+
+    logger.info(`\n[EMAIL VERIFICATION RESEND] Code for ${email} is: ${verificationCode}\n`);
+
+    try {
+      const instances = await prisma.instance.findMany({
+        where: { status: "CONNECTED" }
+      });
+      if (instances.length > 0 && user.phoneNumber) {
+        const text = `Your Tukonnect digital verification code is: ${verificationCode}`;
+        await whatsappManager.sendMessage(instances[0].id, user.phoneNumber, text);
+        logger.info(`Resent email verification code to ${user.phoneNumber} via WhatsApp`);
+      }
+    } catch (err) {
+      logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
+    }
+
+    return { success: true };
+  }
+
   async validateCredentials(input: LoginInput) {
     const user = await prisma.user.findUnique({ where: { email: input.email } });
     if (!user) {

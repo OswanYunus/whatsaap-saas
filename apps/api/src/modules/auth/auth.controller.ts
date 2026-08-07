@@ -39,6 +39,11 @@ export class AuthController {
     });
   }
 
+  async resendVerification(request: FastifyRequest<{ Body: { email: string } }>, reply: FastifyReply) {
+    const result = await authService.resendVerification(request.body.email);
+    return reply.send(result);
+  }
+
   async forgotPassword(request: FastifyRequest<{ Body: ForgotPasswordInput }>, reply: FastifyReply) {
     const result = await authService.forgotPassword(request.body.phoneNumber);
     return reply.send(result);

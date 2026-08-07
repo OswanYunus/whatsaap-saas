@@ -4,14 +4,16 @@ import { MessageCircle, CheckCircle2, RefreshCw, ShieldCheck } from "lucide-reac
 import { useAuth } from "../../context/AuthContext";
 
 export default function VerifyEmailPage() {
-  const { verifyEmail } = useAuth();
+  const { verifyEmail, resendVerification } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const email = searchParams.get("email") || "";
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [verified, setVerified] = useState(false);
 
   // If no email param, redirect to register
@@ -26,6 +28,7 @@ export default function VerifyEmailPage() {
       return;
     }
     setError(null);
+    setResendMessage(null);
     setIsSubmitting(true);
     try {
       await verifyEmail(email, code.trim());
@@ -37,6 +40,20 @@ export default function VerifyEmailPage() {
       setError(message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError(null);
+    setResendMessage(null);
+    setIsResending(true);
+    try {
+      await resendVerification(email);
+      setResendMessage("A new verification code has been sent!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend code.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -85,6 +102,12 @@ export default function VerifyEmailPage() {
                   </div>
                 )}
 
+                {resendMessage && (
+                  <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
+                    {resendMessage}
+                  </div>
+                )}
+
                 <div>
                   <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Verification Code</label>
                   <input
@@ -117,12 +140,23 @@ export default function VerifyEmailPage() {
                 </button>
               </form>
 
-              <p className="mt-4 text-center text-xs text-ink-400 dark:text-ink-500">
-                Didn't get a code? Check your VPS logs or{" "}
-                <a href="/register" className="text-accent-600 hover:underline dark:text-accent-400">
-                  register again
-                </a>.
-              </p>
+              <div className="mt-6 text-center text-xs space-y-2">
+                <p className="text-ink-400 dark:text-ink-500">
+                  Didn't get a code?{" "}
+                  <button
+                    onClick={handleResend}
+                    disabled={isResending}
+                    className="font-semibold text-accent-600 hover:underline dark:text-accent-400 disabled:opacity-50"
+                  >
+                    {isResending ? "Resending..." : "Resend Code"}
+                  </button>
+                </p>
+                <p>
+                  <a href="/register" className="text-ink-400 hover:underline dark:text-ink-500">
+                    Register again
+                  </a>
+                </p>
+              </div>
             </>
           )}
         </div>

@@ -27,6 +27,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post("/auth/resend-verification", {
+    handler: async (request, reply) => {
+      const { email } = request.body as { email: string };
+      if (!email) return reply.status(400).send({ error: "Email is required" });
+      return authController.resendVerification(request as never, reply);
+    }
+  });
+
   fastify.post("/auth/forgot-password", {
     handler: async (request, reply) => {
       const body = forgotPasswordSchema.parse(request.body);

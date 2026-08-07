@@ -51,6 +51,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, workspaceName: string, name: string, phoneNumber: string) => Promise<{ email: string }>;
   verifyEmail: (email: string, code: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
   forgotPassword: (phoneNumber: string) => Promise<void>;
   verifyResetCode: (phoneNumber: string, code: string) => Promise<void>;
   resetPassword: (phoneNumber: string, code: string, password: string) => Promise<void>;
@@ -130,6 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applySession]
   );
 
+  const resendVerification = useCallback(
+    async (email: string) => {
+      await apiFetch("/api/auth/resend-verification", {
+        method: "POST",
+        body: JSON.stringify({ email })
+      });
+    },
+    []
+  );
+
   const forgotPassword = useCallback(
     async (phoneNumber: string) => {
       await apiFetch("/api/auth/forgot-password", {
@@ -172,12 +183,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       verifyEmail,
+      resendVerification,
       forgotPassword,
       verifyResetCode,
       resetPassword,
       logout
     }),
-    [user, accessToken, workspaces, isLoading, login, register, verifyEmail, forgotPassword, verifyResetCode, resetPassword, logout]
+    [user, accessToken, workspaces, isLoading, login, register, verifyEmail, resendVerification, forgotPassword, verifyResetCode, resetPassword, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
