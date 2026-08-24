@@ -72,11 +72,23 @@ export default function DashboardPage() {
     hour: "2-digit", minute: "2-digit"
   });
 
+  const getFirstName = () => {
+    if (user?.name) {
+      const first = user.name.split(' ')[0];
+      return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    }
+    if (user?.email) {
+      const first = user.email.split('@')[0].split('.')[0].split('_')[0].split('-')[0];
+      return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    }
+    return 'there';
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
         <div className="page-header">
-          <h1 className="page-title">Welcome Back, {user?.name || user?.email?.split('@')[0] || 'there'} 👋</h1>
+          <h1 className="page-title">Welcome back, {getFirstName()} 👋</h1>
           <p className="page-subtitle">
             {workspaceName} · {now}
           </p>

@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
 
@@ -31,15 +30,22 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4 dark:bg-canvas-dark">
       <div className="w-full max-w-sm">
-        <div className="mb-6 flex items-center justify-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-ink-800 text-white dark:bg-accent-500 dark:text-ink-900">
-            <MessageCircle size={16} strokeWidth={2.5} />
-          </span>
-          <span className="text-sm font-semibold text-ink-800 dark:text-white">Tukonnect digital</span>
+
+        {/* Brand header */}
+        <div className="mb-8 text-center">
+          <h1
+            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-4xl text-ink-900 dark:text-white tracking-tight"
+          >
+            Tukonnect
+          </h1>
+          <p className="mt-1 text-sm text-ink-400 dark:text-ink-500 tracking-widest uppercase font-medium">
+            Digital
+          </p>
         </div>
 
         <div className="card p-8">
-          <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Log in</h1>
+          <h2 className="text-lg font-semibold text-ink-800 dark:text-white">Log in</h2>
           <p className="mt-1 text-sm text-ink-500 dark:text-ink-300">Welcome back.</p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -100,6 +106,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
       </div>
     </div>
   );
