@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
+import bcrypt from "bcryptjs";
 import { prisma } from "@waas/database";
 import { AppError } from "../../plugins/error-handler";
 
@@ -59,6 +60,29 @@ export class AdminController {
     });
 
     return reply.send({ success: true, isBlocked: updated.isBlocked });
+  }
+
+  async resetUserPassword(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    const { password } = request.body as { password?: string };
+
+    if (!password || password.trim().length < 8) {
+      throw new AppError("Password must be at least 8 characters long", 400, "BAD_REQUEST");
+    }
+
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new AppError("User not found", 404, "NOT_FOUND");
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash }
+    });
+
+    return reply.send({ success: true, message: "Password updated successfully" });
   }
 }
 

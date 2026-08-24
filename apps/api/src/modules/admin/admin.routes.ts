@@ -27,4 +27,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate, superUserGuard],
     handler: adminController.toggleBlock
   });
+
+  fastify.post("/admin/users/:id/reset-password", {
+    preHandler: [fastify.authenticate, superUserGuard],
+    handler: adminController.resetUserPassword
+  });
 }

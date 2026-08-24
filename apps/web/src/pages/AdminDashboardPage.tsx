@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Shield, ShieldCheck, Ban, CheckCircle, RefreshCw, Users } from "lucide-react";
+import { Shield, ShieldCheck, Ban, CheckCircle, RefreshCw, Users, Key, X } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,6 +21,12 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Password reset modal states
+  const [resettingUser, setResettingUser] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {
     if (!token) return;
@@ -63,6 +69,34 @@ export default function AdminDashboardPage() {
       setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, isBlocked: res.isBlocked } : u));
     } catch {
       /* silently fail */
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resettingUser || !token) return;
+    setActionLoading(`reset-${resettingUser.id}`);
+    setResetError(null);
+    setResetSuccess(false);
+    try {
+      await apiFetch<{ success: boolean }>(
+        `/api/admin/users/${resettingUser.id}/reset-password`,
+        {
+          method: "POST",
+          accessToken: token,
+          body: JSON.stringify({ password: newPassword })
+        }
+      );
+      setResetSuccess(true);
+      setNewPassword("");
+      setTimeout(() => {
+        setResettingUser(null);
+        setResetSuccess(false);
+      }, 1500);
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
       setActionLoading(null);
     }
@@ -176,6 +210,19 @@ export default function AdminDashboardPage() {
                         {!isSelf && (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
+                              onClick={() => {
+                                setResettingUser(u);
+                                setNewPassword("");
+                                setResetError(null);
+                                setResetSuccess(false);
+                              }}
+                              title="Reset Password"
+                              className="flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20 transition-colors"
+                            >
+                              <Key size={10} />
+                              Password
+                            </button>
+                            <button
                               onClick={() => toggleElevate(u.id)}
                               disabled={actionLoading === `elevate-${u.id}`}
                               title={u.isAdmin ? "Remove admin" : "Make admin"}
@@ -220,6 +267,85 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Password reset modal overlay */}
+      {resettingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-sm p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-ink-800 dark:text-white flex items-center gap-2">
+                <Key size={16} className="text-accent-500" />
+                Change Password
+              </h3>
+              <button
+                onClick={() => setResettingUser(null)}
+                className="btn-ghost h-7 w-7 p-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-xs text-ink-400">
+                Update the password for user: <span className="font-medium text-ink-700 dark:text-ink-200">{resettingUser.email}</span>
+              </p>
+            </div>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              {resetError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+                  {resetError}
+                </div>
+              )}
+
+              {resetSuccess && (
+                <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
+                  Password updated successfully!
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-ink-700 dark:text-ink-200">New Password</label>
+                <input
+                  type="password"
+                  placeholder="Min 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="input"
+                  required
+                  minLength={8}
+                  disabled={actionLoading === `reset-${resettingUser.id}`}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setResettingUser(null)}
+                  className="btn-outline text-xs px-3 py-1.5"
+                  disabled={actionLoading === `reset-${resettingUser.id}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-accent text-xs px-3 py-1.5 flex items-center gap-1"
+                  disabled={actionLoading === `reset-${resettingUser.id}` || newPassword.length < 8}
+                >
+                  {actionLoading === `reset-${resettingUser.id}` ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
