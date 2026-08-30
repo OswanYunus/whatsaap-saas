@@ -1,34 +1,63 @@
-import type { LucideIcon } from "lucide-react";
+import type { ElementType } from "react";
+import SpotlightCard from "./ui/SpotlightCard";
+import AnimatedCounter from "./ui/AnimatedCounter";
 
 interface StatCardProps {
   label: string;
   value: string;
-  icon: LucideIcon;
-  tone?: "default" | "accent" | "warning" | "danger";
-  hint?: string;
+  icon: ElementType;
+  tone?: "default" | "accent" | "warning" | "danger" | "info";
+  suffix?: string;
 }
 
-const toneStyles: Record<NonNullable<StatCardProps["tone"]>, string> = {
-  default: "text-ink-400 dark:text-ink-500",
-  accent: "text-accent-600 dark:text-accent-400",
-  warning: "text-amber-500 dark:text-amber-400",
-  danger: "text-red-500 dark:text-red-400"
+const toneMap = {
+  default: {
+    icon: "bg-ink-100 text-ink-500 dark:bg-white/[0.08] dark:text-ink-400",
+    value: "text-ink-900 dark:text-white"
+  },
+  accent: {
+    icon: "bg-accent-100 text-accent-600 dark:bg-accent-500/15 dark:text-accent-400",
+    value: "text-accent-700 dark:text-accent-400"
+  },
+  warning: {
+    icon: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    value: "text-amber-700 dark:text-amber-400"
+  },
+  danger: {
+    icon: "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+    value: "text-red-600 dark:text-red-400"
+  },
+  info: {
+    icon: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+    value: "text-blue-700 dark:text-blue-400"
+  }
 };
 
-/** A single metric tile used across the Dashboard overview row. */
-export default function StatCard({ label, value, icon: Icon, tone = "default", hint }: StatCardProps) {
+export default function StatCard({ label, value, icon: Icon, tone = "default", suffix }: StatCardProps) {
+  const styles = toneMap[tone];
+  const isNumeric = !isNaN(Number(value.replace(/[%,]/g, "")));
+  const numericValue = isNumeric ? Number(value.replace(/[%,]/g, "")) : null;
+  const isSuffix = value.endsWith("%") ? "%" : (suffix ?? "");
+
   return (
-    <div className="card-flat px-4 py-3 transition-colors duration-150 hover:border-ink-200/80 dark:hover:border-white/20">
-      <div className="flex items-center gap-1.5">
-        <Icon size={14} strokeWidth={1.75} className={toneStyles[tone]} />
-        <span className="text-2xs font-medium uppercase tracking-wider text-ink-400 dark:text-ink-500">
-          {label}
-        </span>
+    <SpotlightCard className="p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}>
+          <Icon size={17} strokeWidth={2} />
+        </div>
       </div>
-      <div className="mt-1.5 font-mono text-xl font-semibold tracking-tight text-ink-800 dark:text-white">
-        {value}
+      <div className="mt-4">
+        <div className={`stat-number ${styles.value}`}>
+          {value === "…" ? (
+            <span className="skeleton inline-block h-8 w-16 rounded-lg" />
+          ) : isNumeric && numericValue !== null ? (
+            <AnimatedCounter value={numericValue} suffix={isSuffix} />
+          ) : (
+            value
+          )}
+        </div>
+        <p className="stat-label mt-1">{label}</p>
       </div>
-      {hint && <div className="mt-0.5 text-2xs text-ink-400 dark:text-ink-500">{hint}</div>}
-    </div>
+    </SpotlightCard>
   );
 }

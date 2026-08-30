@@ -1,64 +1,38 @@
-type Tone = "green" | "gray" | "amber" | "red" | "blue";
+interface StatusBadgeProps {
+  status: string;
+  pulse?: boolean;
+}
 
-const toneStyles: Record<Tone, string> = {
-  green: "bg-accent-500/10 text-accent-700 dark:bg-accent-500/15 dark:text-accent-400",
-  gray: "bg-ink-100/80 text-ink-500 dark:bg-white/10 dark:text-ink-400",
-  amber: "bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  red: "bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-400",
-  blue: "bg-blue-500/10 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400"
+const statusMap: Record<string, { label: string; dot: string; badge: string }> = {
+  connected:   { label: "Connected",   dot: "bg-accent-500",  badge: "badge-green" },
+  active:      { label: "Active",      dot: "bg-accent-500",  badge: "badge-green" },
+  running:     { label: "Running",     dot: "bg-accent-500",  badge: "badge-green" },
+  completed:   { label: "Completed",   dot: "bg-blue-500",    badge: "badge-blue" },
+  sent:        { label: "Sent",        dot: "bg-blue-500",    badge: "badge-blue" },
+  scheduled:   { label: "Scheduled",  dot: "bg-amber-500",   badge: "badge-amber" },
+  queued:      { label: "Queued",     dot: "bg-amber-500",   badge: "badge-amber" },
+  paused:      { label: "Paused",     dot: "bg-amber-500",   badge: "badge-amber" },
+  pending:     { label: "Pending",    dot: "bg-amber-400",   badge: "badge-amber" },
+  failed:      { label: "Failed",     dot: "bg-red-500",     badge: "badge-red" },
+  error:       { label: "Error",      dot: "bg-red-500",     badge: "badge-red" },
+  disconnected:{ label: "Disconnected",dot: "bg-ink-400",    badge: "badge-gray" },
+  inactive:    { label: "Inactive",   dot: "bg-ink-400",     badge: "badge-gray" },
+  draft:       { label: "Draft",      dot: "bg-ink-400",     badge: "badge-gray" },
 };
 
-const dotStyles: Record<Tone, string> = {
-  green: "bg-accent-500",
-  gray: "bg-ink-400",
-  amber: "bg-amber-500",
-  red: "bg-red-500",
-  blue: "bg-blue-500"
-};
-
-/**
- * Maps a domain status string to a display tone. Centralized here so
- * every table (instances, campaigns, queue) renders statuses
- * consistently instead of each page picking its own colors.
- */
-const STATUS_TONE: Record<string, Tone> = {
-  connected: "green",
-  sent: "green",
-  completed: "green",
-  connecting: "amber",
-  queued: "amber",
-  scheduled: "amber",
-  paused: "amber",
-  processing: "blue",
-  running: "blue",
-  disconnected: "gray",
-  draft: "gray",
-  logged_out: "gray",
-  failed: "red",
-
-  // Uppercase database values
-  CONNECTED: "green",
-  CONNECTING: "amber",
-  QR_WAITING: "amber",
-  PAIRING_CODE: "blue",
-  RECONNECTING: "amber",
-  LOGGED_OUT: "gray",
-  ERROR: "red",
-  PENDING: "gray",
-  DISCONNECTED: "gray"
-};
-
-export default function StatusBadge({ status, pulse = false }: { status: string; pulse?: boolean }) {
-  const normalizedStatus = status ?? "";
-  const tone = STATUS_TONE[normalizedStatus] ?? STATUS_TONE[normalizedStatus.toLowerCase()] ?? STATUS_TONE[normalizedStatus.toUpperCase()] ?? "gray";
-  const label = normalizedStatus.replace(/_/g, " ");
+export default function StatusBadge({ status, pulse = false }: StatusBadgeProps) {
+  const key = status?.toLowerCase() ?? "";
+  const config = statusMap[key] ?? { label: status, dot: "bg-ink-400", badge: "badge-gray" };
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-2xs font-medium capitalize ${toneStyles[tone]}`}
-    >
-      <span className={`h-1 w-1 rounded-full ${dotStyles[tone]} ${pulse ? "animate-pulse" : ""}`} />
-      {label}
+    <span className={config.badge}>
+      <span className="relative flex h-1.5 w-1.5 shrink-0">
+        {pulse && (
+          <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${config.dot} opacity-60`} />
+        )}
+        <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${config.dot}`} />
+      </span>
+      {config.label}
     </span>
   );
 }
