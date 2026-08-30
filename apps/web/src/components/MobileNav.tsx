@@ -55,7 +55,7 @@ export default function MobileNav({ open, onClose }: MobileNavProps) {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto space-y-0.5 px-2 py-3">
+        <nav className="flex-1 overflow-y-auto space-y-2 px-3 py-4">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className="block">
               {({ isActive }) => (

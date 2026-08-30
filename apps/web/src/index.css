@@ -30,18 +30,18 @@
 @layer components {
   /* ── Surfaces ── */
   .card {
-    @apply rounded-lg border border-ink-100/80 bg-surface shadow-card;
+    @apply rounded-xl border border-ink-100/80 bg-surface shadow-card p-6;
     @apply dark:border-white/10 dark:bg-surface-dark dark:shadow-card-dark;
   }
 
   .card-flat {
-    @apply rounded-lg border border-ink-100/80 bg-surface;
+    @apply rounded-xl border border-ink-100/80 bg-surface p-6;
     @apply dark:border-white/10 dark:bg-surface-dark;
   }
 
   /* ── Buttons (base styles inlined in variants to avoid @apply nesting errors) ── */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-medium transition-all duration-150;
     @apply disabled:pointer-events-none disabled:opacity-40;
   }
 
@@ -71,36 +71,36 @@
 
   /* ── Form controls ── */
   .input {
-    @apply w-full rounded-md border border-ink-200/80 bg-white px-2.5 py-1.5 text-[13px] text-ink-800 placeholder:text-ink-400 transition-colors duration-150;
+    @apply w-full rounded-lg border border-ink-200/80 bg-white px-3 py-2 text-[13px] text-ink-800 placeholder:text-ink-400 transition-colors duration-150;
     @apply focus:border-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-800/5;
     @apply dark:border-white/10 dark:bg-surface-raised-dark dark:text-ink-100 dark:placeholder:text-ink-500;
     @apply dark:focus:border-ink-500 dark:focus:ring-white/10;
   }
 
   .label {
-    @apply text-[13px] font-medium text-ink-700 dark:text-ink-200;
+    @apply text-[13px] font-medium text-ink-700 dark:text-ink-200 mb-1.5 block;
   }
 
   /* ── Page structure ── */
   .page-header {
-    @apply space-y-0.5;
+    @apply space-y-1 mb-6;
   }
 
   .page-title {
-    @apply text-[17px] font-semibold tracking-tight text-ink-800 dark:text-white;
+    @apply text-lg sm:text-xl font-bold tracking-tight text-ink-800 dark:text-white;
   }
 
   .page-subtitle {
-    @apply text-[13px] text-ink-400;
+    @apply text-sm text-ink-400;
   }
 
   .section-title {
-    @apply text-[13px] font-medium text-ink-700 dark:text-ink-200;
+    @apply text-sm font-semibold text-ink-700 dark:text-ink-200;
   }
 
   /* ── Tables ── */
   .table-wrap {
-    @apply card overflow-hidden;
+    @apply card overflow-hidden p-0;
   }
 
   .table {
@@ -113,7 +113,7 @@
   }
 
   .table th {
-    @apply px-4 py-2.5 text-2xs font-medium uppercase tracking-wider text-ink-400 dark:text-ink-500;
+    @apply px-5 py-3 text-2xs font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500;
   }
 
   .table tbody {
@@ -121,7 +121,7 @@
   }
 
   .table td {
-    @apply px-4 py-2.5;
+    @apply px-5 py-4;
   }
 
   .table-row {
@@ -130,7 +130,7 @@
 
   /* ── Navigation ── */
   .nav-item {
-    @apply relative flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150;
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150;
   }
 
   .nav-item-active {

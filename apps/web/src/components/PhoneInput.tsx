@@ -4,11 +4,12 @@ import { COUNTRIES, type Country } from "../lib/countries";
 
 interface PhoneInputProps {
   label: string;
+  value?: string;
   onChange: (fullNumber: string) => void;
   disabled?: boolean;
 }
 
-export default function PhoneInput({ label, onChange, disabled }: PhoneInputProps) {
+export default function PhoneInput({ label, value, onChange, disabled }: PhoneInputProps) {
   const [selectedCountry, setSelectedCountry] = useState<Country>(
     COUNTRIES.find((c) => c.code === "KE") || COUNTRIES[0]
   );
@@ -16,6 +17,24 @@ export default function PhoneInput({ label, onChange, disabled }: PhoneInputProp
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync value from parent
+  useEffect(() => {
+    if (!value) {
+      setPhoneNumberRest("");
+      return;
+    }
+    const clean = value.replace(/\D/g, "");
+    // Find matching country by dialCode, matching longest dialCode first (e.g. 254 before 2)
+    const sorted = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+    const match = sorted.find((c) => clean.startsWith(c.dialCode));
+    if (match) {
+      setSelectedCountry(match);
+      setPhoneNumberRest(clean.slice(match.dialCode.length));
+    } else {
+      setPhoneNumberRest(clean);
+    }
+  }, [value]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -544,12 +544,13 @@ export default function CampaignCreatePage() {
                 )}
               </div>
               <button
+                type="button"
                 onClick={() => setForm((f) => ({ ...f, footerEnabled: !f.footerEnabled }))}
-                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${form.footerEnabled ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
+                className={`flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full p-[2px] transition-colors duration-200 focus:outline-none ${form.footerEnabled ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
                 role="switch"
                 aria-checked={form.footerEnabled}
               >
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${form.footerEnabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+                <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${form.footerEnabled ? "translate-x-4" : "translate-x-0"}`} />
               </button>
             </div>
           </div>

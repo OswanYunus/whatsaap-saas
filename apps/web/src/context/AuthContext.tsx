@@ -95,6 +95,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [applySession, clearSession]);
 
+  // Inactivity timeout: 30 minutes
+  useEffect(() => {
+    if (!user) return;
+
+    const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes
+    const LAST_ACTIVE_KEY = "waas-last-active";
+
+    // Set initial activity
+    window.localStorage.setItem(LAST_ACTIVE_KEY, Date.now().toString());
+
+    const updateActivity = () => {
+      window.localStorage.setItem(LAST_ACTIVE_KEY, Date.now().toString());
+    };
+
+    // Add activity listeners
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+    events.forEach((name) => window.addEventListener(name, updateActivity));
+
+    // Check inactivity every 10 seconds
+    const interval = setInterval(() => {
+      const lastActive = parseInt(window.localStorage.getItem(LAST_ACTIVE_KEY) || "0", 10);
+      if (Date.now() - lastActive > INACTIVITY_LIMIT) {
+        clearSession();
+        window.localStorage.removeItem(LAST_ACTIVE_KEY);
+      }
+    }, 10000);
+
+    return () => {
+      events.forEach((name) => window.removeEventListener(name, updateActivity));
+      clearInterval(interval);
+    };
+  }, [user, clearSession]);
+
   const login = useCallback(
     async (email: string, password: string) => {
       const { user: loggedInUser, accessToken: token } = await apiFetch<LoginResponse>(

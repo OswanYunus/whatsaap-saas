@@ -151,12 +151,13 @@ function CerebroTab() {
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setFooterEnabled((v) => !v)}
-          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${footerEnabled ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
+          className={`flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full p-[2px] transition-colors duration-200 focus:outline-none ${footerEnabled ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
           role="switch"
           aria-checked={footerEnabled}
         >
-          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${footerEnabled ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${footerEnabled ? "translate-x-4" : "translate-x-0"}`} />
         </button>
       </div>
 
@@ -340,12 +341,13 @@ function AppearanceTab() {
           <div className="text-2xs text-ink-400">{theme === "dark" ? "Enabled" : "Disabled"}</div>
         </div>
         <button
+          type="button"
           onClick={toggleTheme}
-          className={`relative h-5 w-9 rounded-full transition-colors duration-150 ${theme === "dark" ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
+          className={`flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full p-[2px] transition-colors duration-200 focus:outline-none ${theme === "dark" ? "bg-accent-500" : "bg-ink-200 dark:bg-ink-600"}`}
           role="switch"
           aria-checked={theme === "dark"}
         >
-          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${theme === "dark" ? "translate-x-[18px]" : "translate-x-0.5"}`} />
+          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${theme === "dark" ? "translate-x-4" : "translate-x-0"}`} />
         </button>
       </div>
     </div>
@@ -405,7 +407,17 @@ function DangerZoneTab() {
 
 /* ─── Main Page ─── */
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("workspace");
+  const { user } = useAuth();
+  const isAdmin = user?.isAdmin ?? false;
+
+  const allowedTabs = TABS.filter((tab) => {
+    if (!isAdmin) {
+      return tab.id === "appearance";
+    }
+    return true;
+  });
+
+  const [activeTab, setActiveTab] = useState<Tab>(isAdmin ? "workspace" : "appearance");
 
   return (
     <div className="space-y-5">
@@ -416,7 +428,7 @@ export default function SettingsPage() {
 
       <div className="flex gap-8">
         <nav className="w-40 shrink-0 space-y-0.5">
-          {TABS.map((tab) => (
+          {allowedTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -428,11 +440,11 @@ export default function SettingsPage() {
         </nav>
 
         <div className="min-w-0 flex-1 animate-fade-in">
-          {activeTab === "workspace" && <WorkspaceTab />}
-          {activeTab === "cerebro" && <CerebroTab />}
-          {activeTab === "api-keys" && <ApiKeysTab />}
+          {activeTab === "workspace" && isAdmin && <WorkspaceTab />}
+          {activeTab === "cerebro" && isAdmin && <CerebroTab />}
+          {activeTab === "api-keys" && isAdmin && <ApiKeysTab />}
           {activeTab === "appearance" && <AppearanceTab />}
-          {activeTab === "danger" && <DangerZoneTab />}
+          {activeTab === "danger" && isAdmin && <DangerZoneTab />}
         </div>
       </div>
     </div>

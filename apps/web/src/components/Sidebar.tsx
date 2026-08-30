@@ -28,7 +28,7 @@ export default function Sidebar() {
         </span>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-2 pb-4 pt-1">
+      <nav className="flex-1 space-y-2 px-3 pb-6 pt-3">
         {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className="block">
             {({ isActive }) => (

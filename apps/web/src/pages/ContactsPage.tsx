@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Download, Search, Upload, Users, Plus, Edit2, Trash2, Archive, CheckCircle2, AlertCircle, RefreshCw, X, Tag, FileText } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import PhoneInput from "../components/PhoneInput";
 
 interface Contact {
   id: string;
@@ -572,18 +573,11 @@ export default function ContactsPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="label" htmlFor="phone">Phone Number</label>
-                <input
-                  id="phone"
-                  type="text"
-                  placeholder="e.g. 254712345678"
-                  value={formPhoneNumber}
-                  onChange={e => setFormPhoneNumber(e.target.value.replace(/\D/g, ""))}
-                  className="input"
-                  required
-                />
-              </div>
+              <PhoneInput
+                label="Phone Number"
+                value={formPhoneNumber}
+                onChange={setFormPhoneNumber}
+              />
 
               <div className="space-y-1">
                 <label className="label" htmlFor="group">Group Name (Optional)</label>
