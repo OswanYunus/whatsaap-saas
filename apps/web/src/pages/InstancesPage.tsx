@@ -47,7 +47,8 @@ export default function InstancesPage() {
   useEffect(() => { fetchInstances(); }, [fetchInstances]);
 
   const handleConnectClick = (e: React.MouseEvent) => {
-    if (billingActive === false) { e.preventDefault(); setShowPaywall(true); }
+    // Block navigation if no active plan (null=loading, false=no plan). Allow only if confirmed active (true).
+    if (billingActive !== true) { e.preventDefault(); setShowPaywall(true); }
   };
 
   const handleDisconnect = async (id: string) => {
