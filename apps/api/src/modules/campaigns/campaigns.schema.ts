@@ -7,6 +7,7 @@ const createCampaignBase = z.object({
   instanceId: cuid,
   name: z.string().min(1).max(120),
   messageTemplate: z.string().min(1).max(4096),
+  mediaUrl: z.string().url().optional().nullable(),
   notes: z.string().max(500).optional().nullable(),
   
   audienceType: z.enum(["ALL", "GROUP", "TAGS", "MANUAL"]).default("ALL"),

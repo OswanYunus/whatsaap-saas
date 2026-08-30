@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Shield, ShieldCheck, Ban, CheckCircle, RefreshCw, Users, Key, X } from "lucide-react";
+import { Shield, ShieldCheck, Ban, CheckCircle, RefreshCw, Users, Key, X, Package, Clock } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -12,6 +12,11 @@ interface AdminUser {
   isAdmin: boolean;
   isBlocked: boolean;
   createdAt: string;
+  lastLoginAt: string | null;
+  lastActiveAt: string | null;
+  plan: string;
+  subscriptionExpiresAt: string | null;
+  workspaceName: string;
 }
 
 export default function AdminDashboardPage() {
@@ -121,7 +126,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="card-flat p-4 text-center">
           <div className="text-2xl font-bold text-ink-800 dark:text-white">{users.length}</div>
           <div className="mt-1 text-xs text-ink-400 flex items-center justify-center gap-1"><Users size={12} /> Total Accounts</div>
@@ -129,6 +134,12 @@ export default function AdminDashboardPage() {
         <div className="card-flat p-4 text-center">
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">{users.filter((u) => u.isVerified).length}</div>
           <div className="mt-1 text-xs text-ink-400 flex items-center justify-center gap-1"><CheckCircle size={12} /> Verified</div>
+        </div>
+        <div className="card-flat p-4 text-center">
+          <div className="text-2xl font-bold text-accent-600 dark:text-accent-400">
+            {users.filter((u) => u.plan && u.plan !== "FREE" && u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt) > new Date()).length}
+          </div>
+          <div className="mt-1 text-xs text-ink-400 flex items-center justify-center gap-1"><Package size={12} /> Active Plans</div>
         </div>
         <div className="card-flat p-4 text-center">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">{users.filter((u) => u.isBlocked).length}</div>
@@ -157,13 +168,18 @@ export default function AdminDashboardPage() {
                   <th className="px-4 py-3 text-left font-medium text-ink-400">User</th>
                   <th className="px-4 py-3 text-left font-medium text-ink-400">Phone</th>
                   <th className="px-4 py-3 text-left font-medium text-ink-400">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-ink-400">Joined</th>
+                  <th className="px-4 py-3 text-left font-medium text-ink-400">Plan</th>
+                  <th className="px-4 py-3 text-left font-medium text-ink-400"><span className="flex items-center gap-1"><Clock size={11} />Last Login</span></th>
+                  <th className="px-4 py-3 text-left font-medium text-ink-400"><span className="flex items-center gap-1"><Clock size={11} />Last Active</span></th>
                   <th className="px-4 py-3 text-right font-medium text-ink-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => {
                   const isSelf = u.email === user?.email;
+                  const planActive = u.plan && u.plan !== "FREE" && u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt) > new Date();
+                  const planColor = u.isAdmin ? "text-accent-600 dark:text-accent-400" : planActive ? "text-green-600 dark:text-green-400" : "text-ink-400";
+                  const fmtDate = (d: string | null) => d ? new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
                   return (
                     <tr key={u.id} className="border-b border-ink-100/40 dark:border-white/5 hover:bg-ink-50/50 dark:hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3">
@@ -182,78 +198,39 @@ export default function AdminDashboardPage() {
                       <td className="px-4 py-3 font-mono text-ink-500 dark:text-ink-400">{u.phoneNumber || "—"}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {u.isAdmin && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-accent-500/10 px-2 py-0.5 text-2xs font-semibold text-accent-600 dark:text-accent-400">
-                              <ShieldCheck size={10} /> Admin
-                            </span>
-                          )}
+                          {u.isAdmin && <span className="inline-flex items-center gap-1 rounded-full bg-accent-500/10 px-2 py-0.5 text-2xs font-semibold text-accent-600 dark:text-accent-400"><ShieldCheck size={10} /> Admin</span>}
                           {u.isVerified ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-2xs font-semibold text-green-600 dark:text-green-400">
-                              <CheckCircle size={10} /> Verified
-                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-2xs font-semibold text-green-600 dark:text-green-400"><CheckCircle size={10} /> Verified</span>
                           ) : (
-                            <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-2xs font-semibold text-amber-600 dark:text-amber-400">
-                              Unverified
-                            </span>
+                            <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-2xs font-semibold text-amber-600 dark:text-amber-400">Unverified</span>
                           )}
-                          {u.isBlocked && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-2xs font-semibold text-red-600 dark:text-red-400">
-                              <Ban size={10} /> Blocked
-                            </span>
-                          )}
+                          {u.isBlocked && <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-2xs font-semibold text-red-600 dark:text-red-400"><Ban size={10} /> Blocked</span>}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-ink-400">
-                        {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold ${planColor}`}>
+                          {u.isAdmin ? "Admin (Free)" : u.plan || "FREE"}
+                        </span>
+                        {!u.isAdmin && u.subscriptionExpiresAt && (
+                          <div className="text-[10px] text-ink-400 mt-0.5">
+                            {planActive ? `Expires ${new Date(u.subscriptionExpiresAt).toLocaleDateString()}` : "Expired"}
+                          </div>
+                        )}
                       </td>
+                      <td className="px-4 py-3 text-ink-400 text-xs whitespace-nowrap">{fmtDate(u.lastLoginAt)}</td>
+                      <td className="px-4 py-3 text-ink-400 text-xs whitespace-nowrap">{fmtDate(u.lastActiveAt)}</td>
                       <td className="px-4 py-3">
                         {!isSelf && (
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setResettingUser(u);
-                                setNewPassword("");
-                                setResetError(null);
-                                setResetSuccess(false);
-                              }}
-                              title="Reset Password"
-                              className="flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20 transition-colors"
-                            >
-                              <Key size={10} />
-                              Password
+                            <button onClick={() => { setResettingUser(u); setNewPassword(""); setResetError(null); setResetSuccess(false); }} title="Reset Password" className="flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20 transition-colors">
+                              <Key size={10} /> Password
                             </button>
-                            <button
-                              onClick={() => toggleElevate(u.id)}
-                              disabled={actionLoading === `elevate-${u.id}`}
-                              title={u.isAdmin ? "Remove admin" : "Make admin"}
-                              className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium transition-colors ${
-                                u.isAdmin
-                                  ? "bg-accent-500/10 text-accent-600 hover:bg-accent-500/20 dark:text-accent-400"
-                                  : "bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20"
-                              }`}
-                            >
-                              {actionLoading === `elevate-${u.id}` ? (
-                                <RefreshCw size={10} className="animate-spin" />
-                              ) : (
-                                <ShieldCheck size={10} />
-                              )}
+                            <button onClick={() => toggleElevate(u.id)} disabled={actionLoading === `elevate-${u.id}`} title={u.isAdmin ? "Remove admin" : "Make admin"} className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium transition-colors ${u.isAdmin ? "bg-accent-500/10 text-accent-600 hover:bg-accent-500/20 dark:text-accent-400" : "bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20"}`}>
+                              {actionLoading === `elevate-${u.id}` ? <RefreshCw size={10} className="animate-spin" /> : <ShieldCheck size={10} />}
                               {u.isAdmin ? "Revoke" : "Elevate"}
                             </button>
-                            <button
-                              onClick={() => toggleBlock(u.id)}
-                              disabled={actionLoading === `block-${u.id}`}
-                              title={u.isBlocked ? "Unblock account" : "Block account"}
-                              className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium transition-colors ${
-                                u.isBlocked
-                                  ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400"
-                                  : "bg-ink-100 text-ink-500 hover:bg-red-100 hover:text-red-600 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-red-500/20 dark:hover:text-red-400"
-                              }`}
-                            >
-                              {actionLoading === `block-${u.id}` ? (
-                                <RefreshCw size={10} className="animate-spin" />
-                              ) : (
-                                <Ban size={10} />
-                              )}
+                            <button onClick={() => toggleBlock(u.id)} disabled={actionLoading === `block-${u.id}`} title={u.isBlocked ? "Unblock account" : "Block account"} className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium transition-colors ${u.isBlocked ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400" : "bg-ink-100 text-ink-500 hover:bg-red-100 hover:text-red-600 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-red-500/20 dark:hover:text-red-400"}`}>
+                              {actionLoading === `block-${u.id}` ? <RefreshCw size={10} className="animate-spin" /> : <Ban size={10} />}
                               {u.isBlocked ? "Unblock" : "Block"}
                             </button>
                           </div>

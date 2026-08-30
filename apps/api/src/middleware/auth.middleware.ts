@@ -1,5 +1,6 @@
 import fp from "fastify-plugin";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { prisma } from "@waas/database";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -28,6 +29,14 @@ export default fp(async (fastify: FastifyInstance) => {
         id: request.user.sub,
         email: request.user.email
       };
+
+      // Asynchronously update last active time to minimize latency
+      prisma.user.update({
+        where: { id: request.user.sub },
+        data: { lastActiveAt: new Date() }
+      }).catch(err => {
+        fastify.log.error(err, "Failed to update lastActiveAt for user");
+      });
     } catch {
       reply.status(401).send({
         error: {

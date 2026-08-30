@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Trash2, RefreshCw, AlertCircle, Wifi, User } from "lucide-react";
 import StatusBadge from "../components/StatusBadge";
+import PaywallModal from "../components/PaywallModal";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -16,31 +17,38 @@ interface InstanceData {
 }
 
 export default function InstancesPage() {
-  const { workspaceId, accessToken } = useAuth();
+  const { workspaceId, accessToken, user } = useAuth();
+  const navigate = useNavigate();
   const [instances, setInstances] = useState<InstanceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [billingActive, setBillingActive] = useState<boolean | null>(null);
+
+  const fetchBilling = useCallback(async () => {
+    if (!workspaceId || !accessToken || user?.isAdmin) { setBillingActive(true); return; }
+    try {
+      const b = await apiFetch<{ success: boolean; expired: boolean }>(`/api/workspaces/${workspaceId}/billing`, { accessToken });
+      setBillingActive(b.success && !b.expired);
+    } catch { setBillingActive(false); }
+  }, [workspaceId, accessToken, user]);
 
   const fetchInstances = useCallback(async () => {
     if (!workspaceId || !accessToken) return;
     try {
-      setIsLoading(true);
-      setError(null);
-      const data = await apiFetch<InstanceData[]>(`/api/whatsapp/instances?workspaceId=${workspaceId}`, {
-        accessToken
-      });
+      setIsLoading(true); setError(null);
+      const data = await apiFetch<InstanceData[]>(`/api/whatsapp/instances?workspaceId=${workspaceId}`, { accessToken });
       setInstances(data);
-    } catch (err) {
-      console.error(err);
-      setError((err as Error).message || "Failed to load instances");
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (err) { setError((err as Error).message || "Failed to load instances"); }
+    finally { setIsLoading(false); }
   }, [workspaceId, accessToken]);
 
-  useEffect(() => {
-    fetchInstances();
-  }, [fetchInstances]);
+  useEffect(() => { fetchBilling(); }, [fetchBilling]);
+  useEffect(() => { fetchInstances(); }, [fetchInstances]);
+
+  const handleConnectClick = (e: React.MouseEvent) => {
+    if (billingActive === false) { e.preventDefault(); setShowPaywall(true); }
+  };
 
   const handleDisconnect = async (id: string) => {
     if (!accessToken) return;
@@ -74,12 +82,18 @@ export default function InstancesPage() {
 
   return (
     <div className="space-y-5">
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onSuccess={() => { setShowPaywall(false); fetchBilling(); navigate("/instances/connect"); }}
+        />
+      )}
       <div className="flex items-center justify-between gap-4">
         <div className="page-header">
           <h1 className="page-title">WhatsApp Instances</h1>
           <p className="page-subtitle">Manage connected WhatsApp accounts and devices.</p>
         </div>
-        <Link to="/instances/connect" className="btn-accent shrink-0 flex items-center gap-1">
+        <Link to="/instances/connect" onClick={handleConnectClick} className="btn-accent shrink-0 flex items-center gap-1">
           <Plus size={14} strokeWidth={2} /> Connect device
         </Link>
       </div>
@@ -108,7 +122,7 @@ export default function InstancesPage() {
           <p className="empty-state-desc">
             Connect a device using QR code or a phone pairing code to start sending campaign messages.
           </p>
-          <Link to="/instances/connect" className="btn-primary mt-4">
+          <Link to="/instances/connect" onClick={handleConnectClick} className="btn-primary mt-4">
             Connect first device
           </Link>
         </div>

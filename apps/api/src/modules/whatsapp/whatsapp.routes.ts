@@ -17,7 +17,8 @@ const pairingCodeSchema = z.object({
 
 const sendInternalSchema = z.object({
   to: z.string(),
-  content: z.string()
+  content: z.string(),
+  mediaUrl: z.string().optional().nullable()
 });
 
 export default async function whatsappRoutes(fastify: FastifyInstance) {
@@ -40,6 +41,7 @@ export default async function whatsappRoutes(fastify: FastifyInstance) {
     handler: async (request, reply) => {
       const { workspaceId, name } = createInstanceSchema.parse(request.body);
       await workspacesService.assertMembership(workspaceId, request.authUser!.id);
+      await workspacesService.assertBilling(workspaceId, request.authUser!.id, "create-instance");
       const instance = await whatsappService.createInstance(workspaceId, name);
       return reply.status(201).send(instance);
     }
@@ -75,6 +77,7 @@ export default async function whatsappRoutes(fastify: FastifyInstance) {
       const { phoneNumber } = pairingCodeSchema.parse(request.body);
       const instance = await prisma.instance.findUniqueOrThrow({ where: { id } });
       await workspacesService.assertMembership(instance.workspaceId, request.authUser!.id);
+      await workspacesService.assertBilling(instance.workspaceId, request.authUser!.id, "create-instance");
       
       const code = await whatsappManager.requestPairingCode(id, phoneNumber);
       return { code };
@@ -88,6 +91,7 @@ export default async function whatsappRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       const instance = await prisma.instance.findUniqueOrThrow({ where: { id } });
       await workspacesService.assertMembership(instance.workspaceId, request.authUser!.id);
+      await workspacesService.assertBilling(instance.workspaceId, request.authUser!.id, "create-instance");
       
       // Force reconnect
       await whatsappManager.disconnectInstance(id);
@@ -165,10 +169,10 @@ export default async function whatsappRoutes(fastify: FastifyInstance) {
       }
 
       const { id } = request.params as { id: string };
-      const { to, content } = sendInternalSchema.parse(request.body);
+      const { to, content, mediaUrl } = sendInternalSchema.parse(request.body);
 
       try {
-        const result = await whatsappManager.sendMessage(id, to, content);
+        const result = await whatsappManager.sendMessage(id, to, content, mediaUrl);
         return result;
       } catch (err) {
         return reply.code(500).send({ error: (err as Error).message });

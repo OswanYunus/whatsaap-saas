@@ -59,10 +59,10 @@ export class WhatsAppService {
     });
   }
 
-  async sendMessage(instanceId: string, to: string, content: string): Promise<WhatsAppSendResult> {
+  async sendMessage(instanceId: string, to: string, content: string, mediaUrl?: string | null): Promise<WhatsAppSendResult> {
     // If the socket is active in the current memory workspace (API process)
     if (whatsappManager.hasActiveSocket(instanceId)) {
-      return whatsappManager.sendMessage(instanceId, to, content);
+      return whatsappManager.sendMessage(instanceId, to, content, mediaUrl);
     }
 
     // Otherwise, we are in a worker process! Forward the request to the main API process
@@ -78,7 +78,7 @@ export class WhatsAppService {
           "Content-Type": "application/json",
           "x-internal-token": env.JWT_ACCESS_SECRET
         },
-        body: JSON.stringify({ to, content })
+        body: JSON.stringify({ to, content, mediaUrl })
       });
 
       if (!response.ok) {

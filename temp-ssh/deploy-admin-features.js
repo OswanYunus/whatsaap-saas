@@ -25,8 +25,8 @@ async function run() {
 
   // Apply new database schema fields
   console.log('\n--- Sychronizing database schema ---');
-  await exec('npx prisma db push --accept-data-loss', '/opt/whatsapp-saas/packages/database');
-  await exec('npx prisma generate', '/opt/whatsapp-saas/packages/database');
+  await exec('export $(grep -v \'^#\' /opt/whatsapp-saas/.env | xargs) && npx prisma db push --accept-data-loss', '/opt/whatsapp-saas/packages/database');
+  await exec('export $(grep -v \'^#\' /opt/whatsapp-saas/.env | xargs) && npx prisma generate', '/opt/whatsapp-saas/packages/database');
 
   // Build the code
   console.log('\n--- Building application ---');

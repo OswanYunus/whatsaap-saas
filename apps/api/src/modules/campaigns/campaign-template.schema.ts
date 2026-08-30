@@ -8,6 +8,7 @@ const createCampaignTemplateBase = z.object({
   name: z.string().min(1).max(120),
   notes: z.string().max(500).optional().nullable(),
   messageTemplate: z.string().min(1).max(4096),
+  mediaUrl: z.string().url().optional().nullable(),
   
   audienceType: z.enum(["ALL", "GROUP", "TAGS", "MANUAL"]).default("ALL"),
   audienceGroupName: z.string().max(60).optional().nullable(),

@@ -164,15 +164,16 @@ export class AuthService {
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
     }
 
-    // Auto-update admin status if it matches superuser email
-    if (user.email.toLowerCase() === "oswanbarackyunus@gmail.com" && !user.isAdmin) {
-      return prisma.user.update({
-        where: { id: user.id },
-        data: { isAdmin: true }
-      });
-    }
+    // Auto-update admin status if it matches superuser email, and always update lastLoginAt
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        ...(user.email.toLowerCase() === "oswanbarackyunus@gmail.com" && !user.isAdmin ? { isAdmin: true } : {})
+      }
+    });
 
-    return user;
+    return updatedUser;
   }
 
   async forgotPassword(phoneNumber: string) {

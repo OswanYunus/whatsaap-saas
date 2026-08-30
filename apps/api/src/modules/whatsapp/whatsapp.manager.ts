@@ -274,7 +274,7 @@ export class WhatsAppManager {
     });
   }
 
-  async sendMessage(instanceId: string, to: string, content: string) {
+  async sendMessage(instanceId: string, to: string, content: string, mediaUrl?: string | null) {
     const socket = this.sockets.get(instanceId);
     if (!socket) {
       throw new Error("WhatsApp instance is not connected.");
@@ -284,8 +284,17 @@ export class WhatsAppManager {
       ? to
       : `${to.replace(/\D/g, "")}@s.whatsapp.net`;
 
-    logger.info(`Sending message to ${formattedJid} via instance ${instanceId}`);
-    const result = await socket.sendMessage(formattedJid, { text: content });
+    logger.info(`Sending message to ${formattedJid} via instance ${instanceId} (has media: ${!!mediaUrl})`);
+    
+    let result;
+    if (mediaUrl) {
+      result = await socket.sendMessage(formattedJid, {
+        image: { url: mediaUrl },
+        caption: content
+      });
+    } else {
+      result = await socket.sendMessage(formattedJid, { text: content });
+    }
 
     if (!result || !result.key || !result.key.id) {
       throw new Error("Failed to send message via Baileys.");

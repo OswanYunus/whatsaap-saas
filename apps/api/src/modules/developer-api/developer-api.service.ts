@@ -4,6 +4,7 @@ import { AppError } from "../../plugins/error-handler";
 import { messageQueue, campaignSchedulerQueue } from "../../queue/queues/message.queue";
 import { campaignsService } from "../campaigns/campaigns.service";
 import { campaignTemplateService } from "../campaigns/campaign-template.service";
+import { workspacesService } from "../workspaces/workspaces.service";
 import type {
   DeveloperCreateCampaignInput,
   DeveloperScheduleMessageInput,
@@ -67,6 +68,7 @@ export class DeveloperApiService {
         instanceId: instance.id,
         name: input.name,
         messageTemplate: input.message,
+        mediaUrl: input.mediaUrl || null,
         audienceType: audience.type,
         audienceGroupName: audience.groupName,
         audienceTags: audience.tags ?? [],
@@ -92,6 +94,7 @@ export class DeveloperApiService {
       instanceId: instance.id,
       name: input.name,
       messageTemplate: input.message,
+      mediaUrl: input.mediaUrl || null,
       audienceType: audience.type,
       audienceGroupName: audience.groupName,
       audienceTags: audience.tags ?? [],
@@ -131,6 +134,15 @@ export class DeveloperApiService {
     scheduledAt?: Date
   ) {
     const instance = await this.resolveInstance(workspaceId, input.instanceId);
+    
+    // Validate image sending plan limits
+    if (input.mediaUrl) {
+      const billing = await workspacesService.checkBillingByWorkspace(workspaceId);
+      if (!billing.allowImages) {
+        throw new AppError("Image sending is only supported on the Pro plan.", 400, "LIMIT_EXCEEDED");
+      }
+    }
+
     const publicId = `msg_${crypto.randomBytes(12).toString("hex")}`;
 
     const message = await prisma.message.create({
@@ -139,6 +151,7 @@ export class DeveloperApiService {
         instanceId: instance.id,
         to: input.recipient,
         body: input.message,
+        mediaUrl: input.mediaUrl || null,
         status: "QUEUED"
       }
     });
@@ -163,6 +176,12 @@ export class DeveloperApiService {
   }
 
   private async resolveInstance(workspaceId: string, instanceId?: string) {
+    // Assert active plan is running
+    const billing = await workspacesService.checkBillingByWorkspace(workspaceId);
+    if (!billing.success || billing.expired) {
+      throw new AppError("Active subscription required to use API. Please upgrade.", 402, "PAYMENT_REQUIRED");
+    }
+
     const where = instanceId
       ? { id: instanceId, workspaceId, status: "CONNECTED" as const }
       : { workspaceId, status: "CONNECTED" as const };

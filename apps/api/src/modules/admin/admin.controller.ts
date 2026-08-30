@@ -6,20 +6,43 @@ import { AppError } from "../../plugins/error-handler";
 export class AdminController {
   async listUsers(_request: FastifyRequest, reply: FastifyReply) {
     const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phoneNumber: true,
-        isVerified: true,
-        isAdmin: true,
-        isBlocked: true,
-        createdAt: true
+      include: {
+        workspaces: {
+          include: {
+            workspace: {
+              select: {
+                id: true,
+                name: true,
+                plan: true,
+                subscriptionExpiresAt: true
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: "desc" }
     });
 
-    return reply.send(users);
+    const result = users.map((u) => {
+      const primaryWorkspace = u.workspaces[0]?.workspace;
+      return {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        phoneNumber: u.phoneNumber,
+        isVerified: u.isVerified,
+        isAdmin: u.isAdmin,
+        isBlocked: u.isBlocked,
+        lastLoginAt: u.lastLoginAt,
+        lastActiveAt: u.lastActiveAt,
+        createdAt: u.createdAt,
+        plan: primaryWorkspace?.plan ?? "FREE",
+        subscriptionExpiresAt: primaryWorkspace?.subscriptionExpiresAt ?? null,
+        workspaceName: primaryWorkspace?.name ?? "N/A"
+      };
+    });
+
+    return reply.send(result);
   }
 
   async toggleElevate(request: FastifyRequest, reply: FastifyReply) {

@@ -83,6 +83,17 @@ export class CampaignsService {
   async create(input: CreateCampaignInput, userId: string) {
     if (userId !== "SYSTEM") {
       await workspacesService.assertMembership(input.workspaceId, userId);
+      
+      // Enforce billing: active subscription required
+      const billing = await workspacesService.checkBilling(input.workspaceId, userId);
+      if (!billing.success || billing.expired) {
+        throw new AppError("Active subscription required to create campaigns. Please renew or upgrade your package.", 402, "PAYMENT_REQUIRED");
+      }
+
+      // If campaign has image mediaUrl, assert billing image allowance
+      if (input.mediaUrl) {
+        await workspacesService.assertBilling(input.workspaceId, userId, "send-image");
+      }
     }
 
     const instance = await prisma.instance.findFirst({
@@ -102,6 +113,7 @@ export class CampaignsService {
         name: input.name,
         notes: input.notes || null,
         messageTemplate: input.messageTemplate,
+        mediaUrl: input.mediaUrl || null,
         audienceType: input.audienceType,
         audienceGroupName: input.audienceGroupName || null,
         audienceTags: input.audienceTags || [],
@@ -133,6 +145,17 @@ export class CampaignsService {
 
     await workspacesService.assertMembership(campaign.workspaceId, userId);
 
+    // Enforce billing: active subscription required
+    const billing = await workspacesService.checkBilling(campaign.workspaceId, userId);
+    if (!billing.success || billing.expired) {
+      throw new AppError("Active subscription required. Please renew or upgrade your package.", 402, "PAYMENT_REQUIRED");
+    }
+
+    // Validate image sending plan limits
+    if (input.mediaUrl) {
+      await workspacesService.assertBilling(campaign.workspaceId, userId, "send-image");
+    }
+
     if (campaign.status !== "DRAFT" && campaign.status !== "SCHEDULED") {
       throw new AppError("Only draft or scheduled campaigns can be edited", 400, "INVALID_STATE");
     }
@@ -143,6 +166,7 @@ export class CampaignsService {
         name: input.name,
         notes: input.notes,
         messageTemplate: input.messageTemplate,
+        mediaUrl: input.mediaUrl,
         audienceType: input.audienceType,
         audienceGroupName: input.audienceGroupName,
         audienceTags: input.audienceTags,
@@ -257,6 +281,7 @@ export class CampaignsService {
       contactId: c.id,
       to: c.phoneNumber,
       body: campaign.messageTemplate,
+      mediaUrl: campaign.mediaUrl,
       status: "QUEUED" as const
     }));
 

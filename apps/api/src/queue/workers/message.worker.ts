@@ -12,6 +12,7 @@ import { prisma } from "@waas/database";
 import { renderTemplate } from "../../lib/template-engine";
 import { campaignTemplateService } from "../../modules/campaigns/campaign-template.service";
 import { campaignsService } from "../../modules/campaigns/campaigns.service";
+import { workspacesService } from "../../modules/workspaces/workspaces.service";
 
 /**
  * Message send worker — consumes individual message jobs from the queue.
@@ -23,6 +24,44 @@ const messageWorker = new Worker<MessageJobData>(
   MESSAGE_QUEUE_NAME,
   async (job) => {
     const { messageId, instanceId, to, content, campaignId, variables = {} } = job.data;
+
+    // Fetch the message and instance workspace info from DB
+    const dbMessage = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        instance: true
+      }
+    });
+
+    if (!dbMessage) {
+      logger.error({ messageId }, "Message not found in database during queue processing");
+      return { status: "FAILED", error: "Message not found in database" };
+    }
+
+    // 1. Enforce active subscription and plan checks
+    try {
+      const billing = await workspacesService.checkBillingByWorkspace(dbMessage.instance.workspaceId);
+      if (!billing.success || billing.expired) {
+        await prisma.message.update({
+          where: { id: messageId },
+          data: { status: "FAILED", failureReason: "Active subscription required. Please renew or upgrade your package." }
+        });
+        if (campaignId) await recomputeCampaignStatus(campaignId);
+        return { status: "FAILED", error: "Payment required" };
+      }
+
+      // Check if message is trying to send an image (has mediaUrl)
+      if (dbMessage.mediaUrl && !billing.allowImages) {
+        await prisma.message.update({
+          where: { id: messageId },
+          data: { status: "FAILED", failureReason: "Image sending is only supported on the Pro plan." }
+        });
+        if (campaignId) await recomputeCampaignStatus(campaignId);
+        return { status: "FAILED", error: "Plan limits exceeded" };
+      }
+    } catch (billingErr: any) {
+      logger.error(billingErr, `Failed to validate billing for workspace ${dbMessage.instance.workspaceId}`);
+    }
 
     // Mark as SENDING
     await prisma.message.update({
@@ -43,7 +82,7 @@ const messageWorker = new Worker<MessageJobData>(
     let result: { status: "SENT" | "FAILED"; error?: string };
 
     try {
-      const sendResult = await whatsappService.sendMessage(instanceId, to, body);
+      const sendResult = await whatsappService.sendMessage(instanceId, to, body, dbMessage.mediaUrl);
       result = { status: sendResult.status as "SENT" | "FAILED" };
     } catch (err: any) {
       result = { status: "FAILED", error: err?.message || String(err) };

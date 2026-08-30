@@ -17,6 +17,7 @@ const audienceSchema = z.object({
 export const developerSendMessageSchema = z.object({
   recipient,
   message: z.string().min(1).max(4096),
+  mediaUrl: z.string().url().optional(),
   instanceId: cuid.optional()
 });
 
@@ -27,6 +28,7 @@ export const developerScheduleMessageSchema = developerSendMessageSchema.extend(
 export const developerCreateCampaignSchema = z.object({
   name: z.string().min(1).max(120),
   message: z.string().min(1).max(4096),
+  mediaUrl: z.string().url().optional(),
   instanceId: cuid.optional(),
   audience: audienceSchema,
   scheduledAt: z.string().datetime().optional().nullable(),

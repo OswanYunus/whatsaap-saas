@@ -53,6 +53,17 @@ export class CampaignTemplateService {
   async create(input: CreateCampaignTemplateInput, userId: string) {
     if (userId !== "SYSTEM") {
       await workspacesService.assertMembership(input.workspaceId, userId);
+
+      // Enforce billing: active subscription required
+      const billing = await workspacesService.checkBilling(input.workspaceId, userId);
+      if (!billing.success || billing.expired) {
+        throw new AppError("Active subscription required to create campaigns. Please renew or upgrade your package.", 402, "PAYMENT_REQUIRED");
+      }
+
+      // If campaign template has image mediaUrl, assert billing image allowance
+      if (input.mediaUrl) {
+        await workspacesService.assertBilling(input.workspaceId, userId, "send-image");
+      }
     }
 
     const instance = await prisma.instance.findFirst({
@@ -70,6 +81,7 @@ export class CampaignTemplateService {
         name: input.name,
         notes: input.notes || null,
         messageTemplate: input.messageTemplate,
+        mediaUrl: input.mediaUrl || null,
         audienceType: input.audienceType,
         audienceGroupName: input.audienceGroupName || null,
         audienceTags: input.audienceTags || [],
@@ -98,12 +110,24 @@ export class CampaignTemplateService {
 
     await workspacesService.assertMembership(template.workspaceId, userId);
 
+    // Enforce billing: active subscription required
+    const billing = await workspacesService.checkBilling(template.workspaceId, userId);
+    if (!billing.success || billing.expired) {
+      throw new AppError("Active subscription required. Please renew or upgrade your package.", 402, "PAYMENT_REQUIRED");
+    }
+
+    // Validate image sending plan limits
+    if (input.mediaUrl) {
+      await workspacesService.assertBilling(template.workspaceId, userId, "send-image");
+    }
+
     const updated = await prisma.campaignTemplate.update({
       where: { id: templateId },
       data: {
         name: input.name,
         notes: input.notes,
         messageTemplate: input.messageTemplate,
+        mediaUrl: input.mediaUrl,
         audienceType: input.audienceType,
         audienceGroupName: input.audienceGroupName,
         audienceTags: input.audienceTags,
@@ -166,6 +190,7 @@ export class CampaignTemplateService {
         name: runName,
         notes: `Recurring schedule trigger for: ${template.name}`,
         messageTemplate: template.messageTemplate,
+        mediaUrl: template.mediaUrl,
         audienceType: template.audienceType,
         audienceGroupName: template.audienceGroupName,
         audienceTags: template.audienceTags,

@@ -13,6 +13,13 @@ enum Role {
   MEMBER
 }
 
+enum Plan {
+  FREE
+  BASIC
+  PREMIUM
+  PRO
+}
+
 enum InstanceStatus {
   PENDING
   CONNECTING
@@ -66,6 +73,8 @@ model User {
   resetPasswordCodeExpiresAt DateTime?
   isAdmin                    Boolean             @default(false)
   isBlocked                  Boolean             @default(false)
+  lastLoginAt                DateTime?
+  lastActiveAt               DateTime?
   createdAt                  DateTime            @default(now())
   updatedAt                  DateTime            @updatedAt
 
@@ -73,9 +82,11 @@ model User {
 }
 
 model Workspace {
-  id          String              @id @default(cuid())
-  name        String
-  createdAt   DateTime            @default(now())
+  id                    String              @id @default(cuid())
+  name                  String
+  plan                  Plan                @default(FREE)
+  subscriptionExpiresAt DateTime?
+  createdAt             DateTime            @default(now())
 
   members     WorkspaceMember[]
   instances   Instance[]
@@ -173,6 +184,7 @@ model Message {
 
   to            String
   body          String
+  mediaUrl      String?
 
   status        MessageStatus  @default(QUEUED)
   failureReason String?
@@ -228,6 +240,7 @@ model CampaignTemplate {
   name              String
   notes             String?
   messageTemplate   String
+  mediaUrl          String?
 
   audienceType      AudienceType @default(ALL)
   audienceGroupName String?
@@ -258,6 +271,7 @@ model Campaign {
 
   name              String
   messageTemplate   String
+  mediaUrl          String?
   notes             String?
 
   audienceType      AudienceType   @default(ALL)
