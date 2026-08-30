@@ -240,6 +240,102 @@
     @apply dark:bg-surface-dark dark:shadow-elevated-dark;
   }
 
+  /* ─── Card contrast fix: surface must stand out from canvas ─── */
+  .card,
+  .card-flat {
+    @apply shadow-[0_1px_4px_rgb(0,0,0,0.07),0_0_0_1px_rgb(0,0,0,0.05)];
+    @apply dark:shadow-[0_1px_4px_rgb(0,0,0,0.4),0_0_0_1px_rgb(255,255,255,0.07)];
+  }
+
+  /* ─── Table ─── */
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-ink-100 bg-surface shadow-card;
+    @apply dark:border-white/[0.07] dark:bg-surface-dark dark:shadow-card-dark;
+  }
+
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .table thead {
+    @apply border-b border-ink-100 bg-ink-50/70 dark:border-white/[0.07] dark:bg-white/[0.03];
+  }
+
+  .table th {
+    @apply px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-ink-400 dark:text-ink-500;
+  }
+
+  .table td {
+    @apply px-5 py-4 text-sm text-ink-700 dark:text-ink-300;
+  }
+
+  .table-row {
+    @apply border-b border-ink-100/60 transition-colors duration-100 dark:border-white/[0.05];
+    @apply hover:bg-accent-50/40 dark:hover:bg-accent-500/[0.04];
+  }
+
+  .table tbody tr:last-child {
+    @apply border-b-0;
+  }
+
+  /* ─── Empty state ─── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+
+  .empty-state-icon {
+    @apply mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-100 text-ink-400 dark:bg-white/[0.08] dark:text-ink-500;
+  }
+
+  .empty-state-title {
+    @apply text-[15px] font-semibold text-ink-700 dark:text-ink-200;
+    letter-spacing: -0.01em;
+  }
+
+  .empty-state-desc {
+    @apply mt-1.5 max-w-xs text-sm text-ink-400 dark:text-ink-500;
+  }
+
+  /* ─── Kanban (Queue Monitor) ─── */
+  .kanban-col {
+    @apply flex flex-col rounded-2xl border border-ink-100 bg-surface shadow-card overflow-hidden;
+    @apply dark:border-white/[0.07] dark:bg-surface-dark;
+  }
+
+  .kanban-col-header {
+    @apply flex items-center justify-between border-b border-ink-100 bg-ink-50/60 px-4 py-3 dark:border-white/[0.07] dark:bg-white/[0.03];
+  }
+
+  .kanban-card {
+    @apply rounded-xl border border-ink-100 bg-ink-50/60 px-3 py-2.5 text-[13px];
+    @apply dark:border-white/[0.07] dark:bg-white/[0.04];
+  }
+
+  /* ─── Live badge ─── */
+  .live-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1 text-[12px] font-medium text-ink-600 transition-colors;
+    @apply dark:border-white/10 dark:bg-white/[0.06] dark:text-ink-300;
+  }
+
+  /* ─── Settings tabs ─── */
+  .settings-tab {
+    @apply w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all duration-150;
+  }
+
+  .settings-tab-active {
+    @apply bg-accent-500/10 text-accent-700 font-semibold dark:bg-accent-500/15 dark:text-accent-400;
+  }
+
+  .settings-tab-inactive {
+    @apply text-ink-500 hover:bg-ink-100/80 hover:text-ink-700 dark:text-ink-400 dark:hover:bg-white/[0.06] dark:hover:text-ink-200;
+  }
+
+  /* ─── Font size extras ─── */
+  .text-3xs {
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+
   /* ─── Scrollbar ─── */
   ::-webkit-scrollbar {
     width: 6px;

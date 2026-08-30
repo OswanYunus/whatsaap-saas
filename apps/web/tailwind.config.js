@@ -44,9 +44,9 @@ export default {
           900: "#14532D"
         },
         canvas: {
-          DEFAULT: "#F5F5F7"
+          DEFAULT: "#EEEEF0"
         },
-        "canvas-dark": "#0A0A0C",
+        "canvas-dark": "#080809",
         surface: {
           DEFAULT: "#FFFFFF"
         },
