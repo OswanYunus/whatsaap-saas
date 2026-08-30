@@ -3,13 +3,13 @@ import { X, Zap, Star, Crown, CheckCircle, Smartphone, Image, RefreshCw, CreditC
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
-interface PaywallModalProps { onClose: () => void; onSuccess: () => void; }
+interface PaywallModalProps { onClose: () => void; onSuccess: () => void; canClose?: boolean; }
 const PLANS = [
   { key: "BASIC" as const, label: "Basic", price: 500, icon: Zap, maxInstances: 1, allowImages: false, popular: false, features: ["1 WhatsApp device","Unlimited text campaigns","Contact management","Basic analytics"] },
   { key: "PREMIUM" as const, label: "Premium", price: 1000, icon: Star, maxInstances: 5, allowImages: false, popular: true, features: ["Up to 5 devices","Unlimited text campaigns","Contact management","Advanced analytics","Recurring campaigns"] },
   { key: "PRO" as const, label: "Pro", price: 1500, icon: Crown, maxInstances: 10, allowImages: true, popular: false, features: ["Up to 10 devices","Unlimited text campaigns","Image/media messages","Advanced analytics","Recurring campaigns","Developer API"] },
 ];
-export default function PaywallModal({ onClose, onSuccess }: PaywallModalProps) {
+export default function PaywallModal({ onClose, onSuccess, canClose = true }: PaywallModalProps) {
   const { workspaceId, accessToken } = useAuth();
   const [selected, setSelected] = useState<typeof PLANS[number] | null>(null);
   const [phone, setPhone] = useState("");
@@ -30,7 +30,11 @@ export default function PaywallModal({ onClose, onSuccess }: PaywallModalProps) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-3xl rounded-2xl border border-ink-200/60 dark:border-white/10 bg-white dark:bg-ink-950 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-ink-100 hover:bg-ink-200 dark:bg-white/10 dark:hover:bg-white/20 text-ink-500 transition-colors z-10"><X size={16} /></button>
+        {canClose && (
+          <button onClick={onClose} className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-ink-100 hover:bg-ink-200 dark:bg-white/10 dark:hover:bg-white/20 text-ink-500 transition-colors z-10">
+            <X size={16} />
+          </button>
+        )}
         <div className="p-6 pb-4">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent-500/10 mb-3"><CreditCard size={22} className="text-accent-500" /></div>
@@ -69,7 +73,7 @@ export default function PaywallModal({ onClose, onSuccess }: PaywallModalProps) 
                 {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
               </div>
               <button onClick={handleCheckout} disabled={!selected || loading} className="btn-accent h-10 px-5 flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay {selected ? `Ksh ${selected.price.toLocaleString()}` : "—"}</>}
+                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay {selected ? `Ksh ${selected.price.toLocaleString()}` : "ï¿½"}</>}
               </button>
             </div>
           )}
