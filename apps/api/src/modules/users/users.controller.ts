@@ -19,6 +19,12 @@ export class UsersController {
       createdAt: user.createdAt
     });
   }
+
+  async deleteProfile(request: FastifyRequest, reply: FastifyReply) {
+    const userId = request.authUser!.id;
+    await usersService.deleteAccount(userId);
+    return reply.send({ success: true, message: "Account deleted successfully." });
+  }
 }
 
 export const usersController = new UsersController();

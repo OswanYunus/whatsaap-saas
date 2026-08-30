@@ -17,11 +17,11 @@ export default function DashboardLayout() {
     }
     if (!workspaceId || !accessToken) return;
     try {
-      const b = await apiFetch<{ success: boolean; expired: boolean }>(
+      const b = await apiFetch<{ plan: string; expired: boolean }>(
         `/api/workspaces/${workspaceId}/billing`,
         { accessToken }
       );
-      setBillingActive(b.success && !b.expired);
+      setBillingActive(b.plan !== "FREE" && !b.expired);
     } catch {
       setBillingActive(false);
     }

@@ -356,51 +356,98 @@ function AppearanceTab() {
 
 /* ─── Danger Zone Tab ─── */
 function DangerZoneTab() {
-  const { workspaceId, accessToken, logout } = useAuth();
+  const { workspaceId, accessToken, logout, user } = useAuth();
   const token = accessToken ?? undefined;
-  const [confirm, setConfirm] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [confirmWorkspace, setConfirmWorkspace] = useState("");
+  const [confirmAccount, setConfirmAccount] = useState("");
+  const [deletingWorkspace, setDeletingWorkspace] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
-  const handleDelete = async () => {
-    if (confirm !== "DELETE") return;
-    setDeleting(true);
+  const handleDeleteWorkspace = async () => {
+    if (confirmWorkspace !== "DELETE") return;
+    setDeletingWorkspace(true);
     try {
       await apiFetch(`/api/workspaces/${workspaceId}`, { method: "DELETE", accessToken: token });
       logout();
     } catch (err: any) {
       alert(err.message ?? "Failed to delete workspace");
-      setDeleting(false);
+      setDeletingWorkspace(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmAccount !== "DELETE MY ACCOUNT") return;
+    setDeletingAccount(true);
+    try {
+      await apiFetch("/api/users/me", { method: "DELETE", accessToken: token });
+      logout();
+    } catch (err: any) {
+      alert(err.message ?? "Failed to delete account");
+      setDeletingAccount(false);
     }
   };
 
   return (
-    <div className="max-w-md space-y-4 rounded-lg border border-red-200/80 bg-red-50/50 p-4 dark:border-red-500/20 dark:bg-red-500/5">
-      <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-        <AlertTriangle size={15} strokeWidth={1.75} />
-        <span className="text-[13px] font-medium">Delete workspace</span>
+    <div className="space-y-6">
+      {user?.isAdmin && (
+        <div className="max-w-md space-y-4 rounded-lg border border-red-200/80 bg-red-50/50 p-4 dark:border-red-500/20 dark:bg-red-500/5">
+          <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+            <AlertTriangle size={15} strokeWidth={1.75} />
+            <span className="text-[13px] font-medium">Delete workspace</span>
+          </div>
+          <p className="text-[13px] leading-relaxed text-red-600/80 dark:text-red-300/70">
+            This permanently deletes all instances, contacts, campaigns, and message history. This cannot be undone.
+          </p>
+          <div>
+            <label className="label text-red-600 dark:text-red-400">
+              Type <code className="font-mono">DELETE</code> to confirm
+            </label>
+            <input
+              className="input mt-1 border-red-200 dark:border-red-500/30"
+              placeholder="DELETE"
+              value={confirmWorkspace}
+              onChange={(e) => setConfirmWorkspace(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={handleDeleteWorkspace}
+            disabled={confirmWorkspace !== "DELETE" || deletingWorkspace}
+            className="btn-danger gap-2 disabled:opacity-40"
+          >
+            {deletingWorkspace ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+            Delete workspace permanently
+          </button>
+        </div>
+      )}
+
+      <div className="max-w-md space-y-4 rounded-lg border border-red-200/80 bg-red-50/50 p-4 dark:border-red-500/20 dark:bg-red-500/5">
+        <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+          <AlertTriangle size={15} strokeWidth={1.75} />
+          <span className="text-[13px] font-medium">Delete account</span>
+        </div>
+        <p className="text-[13px] leading-relaxed text-red-600/80 dark:text-red-300/70">
+          This permanently deletes your account credentials, all owned workspaces, WhatsApp instances, campaigns, and messages. This cannot be undone.
+        </p>
+        <div>
+          <label className="label text-red-600 dark:text-red-400">
+            Type <code className="font-mono">DELETE MY ACCOUNT</code> to confirm
+          </label>
+          <input
+            className="input mt-1 border-red-200 dark:border-red-500/30"
+            placeholder="DELETE MY ACCOUNT"
+            value={confirmAccount}
+            onChange={(e) => setConfirmAccount(e.target.value)}
+          />
+        </div>
+        <button
+          onClick={handleDeleteAccount}
+          disabled={confirmAccount !== "DELETE MY ACCOUNT" || deletingAccount}
+          className="btn-danger gap-2 disabled:opacity-40"
+        >
+          {deletingAccount ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+          Delete account permanently
+        </button>
       </div>
-      <p className="text-[13px] leading-relaxed text-red-600/80 dark:text-red-300/70">
-        This permanently deletes all instances, contacts, campaigns, and message history. This cannot be undone.
-      </p>
-      <div>
-        <label className="label text-red-600 dark:text-red-400">
-          Type <code className="font-mono">DELETE</code> to confirm
-        </label>
-        <input
-          className="input mt-1 border-red-200 dark:border-red-500/30"
-          placeholder="DELETE"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-        />
-      </div>
-      <button
-        onClick={handleDelete}
-        disabled={confirm !== "DELETE" || deleting}
-        className="btn-danger gap-2 disabled:opacity-40"
-      >
-        {deleting ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
-        Delete workspace permanently
-      </button>
     </div>
   );
 }
@@ -412,7 +459,7 @@ export default function SettingsPage() {
 
   const allowedTabs = TABS.filter((tab) => {
     if (!isAdmin) {
-      return tab.id === "appearance";
+      return tab.id === "appearance" || tab.id === "danger";
     }
     return true;
   });
@@ -444,7 +491,7 @@ export default function SettingsPage() {
           {activeTab === "cerebro" && isAdmin && <CerebroTab />}
           {activeTab === "api-keys" && isAdmin && <ApiKeysTab />}
           {activeTab === "appearance" && <AppearanceTab />}
-          {activeTab === "danger" && isAdmin && <DangerZoneTab />}
+          {activeTab === "danger" && <DangerZoneTab />}
         </div>
       </div>
     </div>

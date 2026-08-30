@@ -6,4 +6,9 @@ export default async function usersRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate],
     handler: usersController.getProfile
   });
+
+  fastify.delete("/users/me", {
+    preHandler: [fastify.authenticate],
+    handler: usersController.deleteProfile
+  });
 }

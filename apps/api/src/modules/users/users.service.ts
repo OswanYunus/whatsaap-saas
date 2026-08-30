@@ -1,5 +1,6 @@
 import { prisma } from "@waas/database";
 import { AppError } from "../../plugins/error-handler";
+import { whatsappManager } from "../whatsapp/whatsapp.manager";
 
 /**
  * User-facing (non-auth) profile logic. Kept separate from AuthService,
@@ -24,6 +25,40 @@ export class UsersService {
     }
 
     return user;
+  }
+
+  async deleteAccount(userId: string) {
+    const memberships = await prisma.workspaceMember.findMany({
+      where: { userId, role: "OWNER" },
+      include: {
+        workspace: {
+          include: {
+            instances: true
+          }
+        }
+      }
+    });
+
+    for (const m of memberships) {
+      for (const inst of m.workspace.instances) {
+        try {
+          await whatsappManager.disconnectInstance(inst.id);
+        } catch {
+          // Ignore errors as we are deleting the database record
+        }
+      }
+    }
+
+    const workspaceIds = memberships.map((m) => m.workspaceId);
+    if (workspaceIds.length > 0) {
+      await prisma.workspace.deleteMany({
+        where: { id: { in: workspaceIds } }
+      });
+    }
+
+    await prisma.user.delete({
+      where: { id: userId }
+    });
   }
 }
 
