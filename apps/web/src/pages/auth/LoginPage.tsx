@@ -39,7 +39,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-canvas dark:bg-canvas-dark">
 
-      {/* ── Left decorative panel (hidden on mobile) ── */}
+      {/* Left decorative panel (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden bg-ink-900 dark:bg-ink-900">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-ink-900 via-ink-800 to-[#0d1a12]" />
@@ -81,7 +81,7 @@ export default function LoginPage() {
               marketing.
             </h1>
             <p className="mt-5 text-base text-white/50 leading-relaxed max-w-sm">
-              Send campaigns, manage contacts, and track delivery — all from one powerful platform.
+              Send campaigns, manage contacts, and track delivery from one powerful platform.
             </p>
 
             {/* Feature list */}
@@ -95,6 +95,13 @@ export default function LoginPage() {
                 </li>
               ))}
             </ul>
+
+            <Link
+              to="/developer-docs"
+              className="mt-8 inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+            >
+              View Developer API docs
+            </Link>
           </div>
 
           {/* Footer */}
@@ -102,7 +109,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Right login form panel ── */}
+      {/* Right login form panel */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-12">
         {/* Mobile logo */}
         <div className="mb-8 flex flex-col items-center lg:hidden">
@@ -181,6 +188,11 @@ export default function LoginPage() {
             Don't have an account?{" "}
             <Link to="/register" className="font-semibold text-accent-600 hover:underline dark:text-accent-400">
               Create one
+            </Link>
+          </p>
+          <p className="mt-3 text-center text-sm">
+            <Link to="/developer-docs" className="font-semibold text-ink-500 hover:text-ink-800 hover:underline dark:text-ink-400 dark:hover:text-ink-200">
+              View Developer API documentation
             </Link>
           </p>
         </div>

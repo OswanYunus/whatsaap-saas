@@ -16,6 +16,7 @@ import QueueMonitorPage from "./pages/QueueMonitorPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import SettingsPage from "./pages/SettingsPage";
 import DeveloperApiPage from "./pages/DeveloperApiPage";
+import PublicDeveloperDocsPage from "./pages/PublicDeveloperDocsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 export default function AppRouter() {
@@ -30,6 +31,7 @@ export default function AppRouter() {
 
       {/* Verification page — accessible without being fully logged in */}
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/developer-docs" element={<PublicDeveloperDocsPage />} />
 
       {/* Protected dashboard routes */}
       <Route element={<ProtectedRoute />}>
