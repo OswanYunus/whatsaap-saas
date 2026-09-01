@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Clipboard, Code2, KeyRound, Loader2, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarClock, Check, Clipboard, Code2, KeyRound, Loader2, Plus, Server, ShieldCheck, Trash2 } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,14 +13,19 @@ interface ApiKey {
   revokedAt: string | null;
 }
 
-const jsExample = `const response = await fetch("https://your-domain.com/api/v1/messages/send", {
+const curlExample = `curl -X POST "https://wa.tukonectdigital.co.ke/api/v1/messages/send" \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: wak_your_api_key" \\
+  -d "{\\"recipient\\":\\"254712345678\\",\\"message\\":\\"Test message from Cerebro API\\"}"`;
+
+const jsExample = `const response = await fetch("https://wa.tukonectdigital.co.ke/api/v1/messages/send", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     "X-API-Key": "wak_your_api_key"
   },
   body: JSON.stringify({
-    recipient: "2547XXXXXXXX",
+    recipient: "254712345678",
     message: "Hello from Cerebro"
   })
 });
@@ -30,10 +35,10 @@ console.log(await response.json());`;
 const pythonExample = `import requests
 
 response = requests.post(
-    "https://your-domain.com/api/v1/messages/send",
+    "https://wa.tukonectdigital.co.ke/api/v1/messages/send",
     headers={"X-API-Key": "wak_your_api_key"},
     json={
-        "recipient": "2547XXXXXXXX",
+        "recipient": "254712345678",
         "message": "Hello from Cerebro",
     },
 )
@@ -46,7 +51,7 @@ $payload = json_encode([
   "message" => "Hello from Cerebro"
 ]);
 
-$ch = curl_init("https://your-domain.com/api/v1/messages/send");
+$ch = curl_init("https://wa.tukonectdigital.co.ke/api/v1/messages/send");
 curl_setopt_array($ch, [
   CURLOPT_POST => true,
   CURLOPT_HTTPHEADER => [
@@ -58,6 +63,22 @@ curl_setopt_array($ch, [
 ]);
 
 echo curl_exec($ch);`;
+
+const laravelExample = `use Illuminate\\Support\\Facades\\Http;
+
+$response = Http::withHeaders([
+    "X-API-Key" => env("CEREBRO_API_KEY"),
+])->post("https://wa.tukonectdigital.co.ke/api/v1/messages/schedule", [
+    "recipient" => "254712345678",
+    "message" => "Your WiFi subscription expires tomorrow.",
+    "scheduledAt" => "2026-09-20T08:00:00Z",
+]);
+
+if ($response->failed()) {
+    throw new Exception($response->json("error.message") ?? "Cerebro API failed");
+}
+
+return $response->json();`;
 
 function CodeBlock({ title, code }: { title: string; code: string }) {
   const [copied, setCopied] = useState(false);
@@ -159,6 +180,39 @@ export default function DeveloperApiPage() {
         <p className="page-subtitle">API keys, integration endpoints, and request examples.</p>
       </div>
 
+      <section className="grid gap-4 lg:grid-cols-3">
+        <div className="card-flat p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+            <BookOpen size={16} />
+            How it works
+          </div>
+          <p className="mt-3 text-[13px] leading-6 text-ink-600 dark:text-ink-300">
+            The external system sends an HTTP request to Cerebro. Cerebro checks the API key, billing package, and connected WhatsApp instance, then queues the message for delivery.
+          </p>
+        </div>
+        <div className="card-flat p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+            <Server size={16} />
+            Where code goes
+          </div>
+          <p className="mt-3 text-[13px] leading-6 text-ink-600 dark:text-ink-300">
+            The integration code belongs in the customer's own backend, such as Laravel, Node.js, PHP, Python, an ERP, a hotel system, or an ISP billing system. Do not place API keys in browser code.
+          </p>
+        </div>
+        <div className="card-flat p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+            <ShieldCheck size={16} />
+            Requirements
+          </div>
+          <ul className="mt-3 space-y-1.5 text-[13px] text-ink-600 dark:text-ink-300">
+            <li>Active package</li>
+            <li>Connected WhatsApp instance</li>
+            <li>Active API key</li>
+            <li>Valid recipient and message</li>
+          </ul>
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="card-flat p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
@@ -252,29 +306,53 @@ export default function DeveloperApiPage() {
         <div className="card-flat p-4">
           <h2 className="text-sm font-semibold text-ink-800 dark:text-white">Endpoints</h2>
           <div className="mt-3 space-y-2 text-[13px] text-ink-600 dark:text-ink-300">
-            <p><code>POST /messages/send</code> sends one WhatsApp message immediately.</p>
-            <p><code>POST /messages/schedule</code> queues one message for a future ISO timestamp.</p>
-            <p><code>POST /campaigns</code> creates a campaign using existing contacts, scheduling, and recurring options.</p>
-            <p><code>GET /messages/:id</code> returns delivery status for a public message ID.</p>
+            <p><code>POST /messages/send</code> sends one WhatsApp message immediately. Body: <code>{'{"recipient":"254712345678","message":"Hello"}'}</code></p>
+            <p><code>POST /messages/schedule</code> queues one message for a future ISO timestamp. Add <code>scheduledAt</code>.</p>
+            <p><code>POST /campaigns</code> creates a campaign using contacts already stored in Cerebro.</p>
+            <p><code>GET /messages/:id</code> returns delivery status for the public message ID returned after sending.</p>
             <p><code>GET /health</code> returns <code>{'{"status":"ok"}'}</code>.</p>
           </div>
         </div>
 
         <div className="card-flat p-4">
-          <h2 className="text-sm font-semibold text-ink-800 dark:text-white">Responses</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+            <AlertTriangle size={14} />
+            Common responses
+          </h2>
           <div className="mt-3 space-y-2 text-[13px] text-ink-600 dark:text-ink-300">
             <p>Accepted message: <code>{'{"id":"msg_xxx","status":"QUEUED","recipient":"2547XXXXXXXX"}'}</code></p>
             <p>Status lookup: <code>{'{"id":"msg_xxx","status":"SENT","sentAt":"..."}'}</code></p>
             <p>Invalid key: <code>401 Unauthorized</code></p>
+            <p>No package: <code>402 PAYMENT_REQUIRED</code></p>
+            <p>No connected instance: <code>503 NO_CONNECTED_INSTANCE</code></p>
             <p>Rate limit: <code>429 RATE_LIMIT_EXCEEDED</code></p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="card-flat p-4">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+          <CalendarClock size={14} />
+          Scheduling example
+        </h2>
+        <p className="mt-3 text-[13px] leading-6 text-ink-600 dark:text-ink-300">
+          For a hotel, ISP, or billing system, scheduled reminders should be created from that system's backend when the event is known. For example, when a WiFi subscription is renewed, the billing system can schedule the next reminder through <code>POST /messages/schedule</code>.
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-lg border border-ink-100 bg-ink-50 p-3 text-xs text-ink-700 dark:border-white/10 dark:bg-black/20 dark:text-ink-200">
+          <code>{`{
+  "recipient": "254712345678",
+  "message": "Your WiFi subscription expires tomorrow.",
+  "scheduledAt": "2026-09-20T08:00:00Z"
+}`}</code>
+        </pre>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <CodeBlock title="cURL" code={curlExample} />
         <CodeBlock title="JavaScript" code={jsExample} />
         <CodeBlock title="Python" code={pythonExample} />
         <CodeBlock title="PHP" code={phpExample} />
+        <CodeBlock title="Laravel" code={laravelExample} />
       </section>
     </div>
   );
