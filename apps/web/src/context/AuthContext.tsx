@@ -95,11 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, [applySession, clearSession]);
 
-  // Inactivity timeout: 10 minutes
+  // Inactivity timeout: 30 minutes
   useEffect(() => {
     if (!user) return;
 
-    const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
+    const INACTIVITY_LIMIT = 30 * 60 * 1000;
     const LAST_ACTIVE_KEY = "waas-last-active";
 
     // Set initial activity

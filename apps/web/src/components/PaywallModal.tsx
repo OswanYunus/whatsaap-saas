@@ -2,82 +2,190 @@ import { useState } from "react";
 import { X, Zap, Star, Crown, CheckCircle, Smartphone, Image, RefreshCw, CreditCard } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import PhoneInput from "./PhoneInput";
 
-interface PaywallModalProps { onClose: () => void; onSuccess: () => void; canClose?: boolean; }
+interface PaywallModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  canClose?: boolean;
+}
+
 const PLANS = [
-  { key: "BASIC" as const, label: "Basic", price: 500, icon: Zap, maxInstances: 1, allowImages: false, popular: false, features: ["1 WhatsApp device","Unlimited text campaigns","Contact management","Basic analytics"] },
-  { key: "PREMIUM" as const, label: "Premium", price: 1000, icon: Star, maxInstances: 5, allowImages: false, popular: true, features: ["Up to 5 devices","Unlimited text campaigns","Contact management","Advanced analytics","Recurring campaigns"] },
-  { key: "PRO" as const, label: "Pro", price: 1500, icon: Crown, maxInstances: 10, allowImages: true, popular: false, features: ["Up to 10 devices","Unlimited text campaigns","Image/media messages","Advanced analytics","Recurring campaigns","Developer API"] },
+  {
+    key: "BASIC" as const,
+    label: "Basic",
+    price: 500,
+    icon: Zap,
+    maxInstances: 1,
+    allowImages: false,
+    popular: false,
+    tagline: "For one active WhatsApp line.",
+    features: ["Text-only broadcasts", "Contact import access", "Dashboard messaging"]
+  },
+  {
+    key: "PREMIUM" as const,
+    label: "Premium",
+    price: 1000,
+    icon: Star,
+    maxInstances: 5,
+    allowImages: false,
+    popular: true,
+    tagline: "For teams running several lines.",
+    features: ["Multi-device operations", "Campaign scheduling", "Recurring follow-ups"]
+  },
+  {
+    key: "PRO" as const,
+    label: "Pro",
+    price: 1500,
+    icon: Crown,
+    maxInstances: 10,
+    allowImages: true,
+    popular: false,
+    tagline: "For heavier messaging workflows.",
+    features: ["Image-enabled messages", "Developer API access", "Highest device allowance"]
+  }
 ];
+
 export default function PaywallModal({ onClose, onSuccess, canClose = true }: PaywallModalProps) {
   const { workspaceId, accessToken } = useAuth();
-  const [selected, setSelected] = useState<typeof PLANS[number] | null>(null);
+  const [selected, setSelected] = useState<typeof PLANS[number] | null>(PLANS[1]);
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
   const handleCheckout = async () => {
     if (!selected || !workspaceId || !accessToken) return;
-    if (!phone.trim()) { setError("Enter your M-Pesa phone number."); return; }
-    setLoading(true); setError(null);
+    if (!phone.trim()) {
+      setError("Enter your M-Pesa phone number.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
     try {
-      const res = await apiFetch<{ success: boolean; message: string }>(`/api/workspaces/${workspaceId}/billing/checkout`, { method: "POST", accessToken, body: JSON.stringify({ plan: selected.key, phoneNumber: phone.trim() }) });
-      setSuccess(res.message);
-      setTimeout(() => onSuccess(), 2000);
-    } catch (e) { setError(e instanceof Error ? e.message : "Payment failed. Try again."); }
-    finally { setLoading(false); }
+      const res = await apiFetch<{ success: boolean; message: string }>(
+        `/api/workspaces/${workspaceId}/billing/checkout`,
+        {
+          method: "POST",
+          accessToken,
+          body: JSON.stringify({ plan: selected.key, phoneNumber: phone.trim() })
+        }
+      );
+
+      if (res.success) {
+        setSuccess(res.message);
+        setTimeout(() => onSuccess(), 1200);
+      } else {
+        setError(res.message || "Waiting for M-Pesa confirmation before activating this package.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Payment could not be started. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-3xl rounded-2xl border border-ink-200/60 dark:border-white/10 bg-white dark:bg-ink-950 shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.28),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.94),rgba(17,24,39,0.9)_48%,rgba(8,47,73,0.88))] p-4 backdrop-blur-sm">
+      <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-white/18 bg-white/10 text-white shadow-2xl shadow-ink-950/40 backdrop-blur-2xl">
         {canClose && (
-          <button onClick={onClose} className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-ink-100 hover:bg-ink-200 dark:bg-white/10 dark:hover:bg-white/20 text-ink-500 transition-colors z-10">
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-white/20 bg-white/12 text-white/75 transition-colors hover:bg-white/20 hover:text-white"
+            aria-label="Close package selector"
+          >
             <X size={16} />
           </button>
         )}
+
         <div className="p-6 pb-4">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent-500/10 mb-3"><CreditCard size={22} className="text-accent-500" /></div>
-            <h2 className="text-xl font-bold text-ink-900 dark:text-white">Choose a Package</h2>
-            <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Connecting devices requires an active subscription.</p>
+          <div className="mb-6 pr-10">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/12 px-3 py-1 text-xs font-semibold text-cyan-100">
+              <CreditCard size={13} />
+              Monthly packages
+            </div>
+            <h2 className="text-xl font-bold text-white">Choose a Cerebro package</h2>
+            <p className="mt-1 max-w-2xl text-sm text-white/72">
+              You can browse the dashboard without a package. Connecting devices, importing contacts, campaigns, and API sends require an active subscription.
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {PLANS.map(plan => {
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {PLANS.map((plan) => {
               const Icon = plan.icon;
               const isSelected = selected?.key === plan.key;
               return (
-                <button key={plan.key} onClick={() => { setSelected(plan); setError(null); }} className={`relative rounded-xl border-2 p-4 text-left transition-all focus:outline-none ${isSelected ? "border-accent-500 bg-accent-500/5 dark:bg-accent-500/10 shadow-md" : "border-ink-200/60 dark:border-white/10 hover:border-ink-300 dark:hover:border-white/20 bg-ink-50/50 dark:bg-white/5"}`}>
-                  {plan.popular && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent-500 text-ink-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full">POPULAR</span>}
-                  <Icon size={20} className={`mb-3 ${isSelected ? "text-accent-500" : "text-ink-400 dark:text-ink-500"}`} />
-                  <div className="font-bold text-ink-900 dark:text-white">{plan.label}</div>
-                  <div className="mt-0.5 mb-3"><span className="text-2xl font-extrabold text-ink-800 dark:text-white">Ksh {plan.price.toLocaleString()}</span><span className="text-xs text-ink-400 ml-1">/mo</span></div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs text-ink-600 dark:text-ink-300"><Smartphone size={11} className="text-accent-500 shrink-0" />Up to {plan.maxInstances} device{plan.maxInstances > 1 ? "s" : ""}</div>
-                    {plan.allowImages && <div className="flex items-center gap-1.5 text-xs text-ink-600 dark:text-ink-300"><Image size={11} className="text-purple-500 shrink-0" />Image messages</div>}
-                    {plan.features.map(f => <div key={f} className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400"><CheckCircle size={11} className="text-green-500 shrink-0" />{f}</div>)}
+                <button
+                  key={plan.key}
+                  onClick={() => { setSelected(plan); setError(null); }}
+                  className={`relative rounded-xl border p-4 text-left transition-all focus:outline-none ${isSelected ? "border-cyan-300/70 bg-white/18 shadow-lg shadow-cyan-950/20 ring-2 ring-cyan-300/25" : "border-white/14 bg-white/8 hover:border-white/28 hover:bg-white/12"}`}
+                >
+                  {plan.popular && <span className="absolute right-3 top-3 rounded-full bg-cyan-300 px-2 py-0.5 text-[10px] font-bold text-slate-950">POPULAR</span>}
+                  <Icon size={20} className={`mb-3 ${isSelected ? "text-cyan-200" : "text-white/70"}`} />
+                  <div className="font-bold text-white">{plan.label}</div>
+                  <p className="mt-1 min-h-9 text-xs leading-5 text-white/64">{plan.tagline}</p>
+                  <div className="mb-3 mt-0.5">
+                    <span className="text-2xl font-extrabold text-white">Ksh {plan.price.toLocaleString()}</span>
+                    <span className="ml-1 text-xs text-white/55">/mo</span>
                   </div>
-                  {isSelected && <div className="mt-2 text-2xs font-semibold text-accent-600 dark:text-accent-400 flex items-center gap-1"><CheckCircle size={10} />Selected</div>}
+                  <div className="mb-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-white/12 bg-black/12 px-2.5 py-2">
+                      <div className="text-[10px] font-semibold uppercase text-white/48">Devices</div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-white">
+                        <Smartphone size={12} className="text-cyan-200" />
+                        {plan.maxInstances}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-white/12 bg-black/12 px-2.5 py-2">
+                      <div className="text-[10px] font-semibold uppercase text-white/48">Images</div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-white">
+                        <Image size={12} className={plan.allowImages ? "text-cyan-200" : "text-white/35"} />
+                        {plan.allowImages ? "Yes" : "No"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {plan.features.map((feature) => (
+                      <div key={feature} className="flex items-center gap-1.5 text-xs text-white/74">
+                        <CheckCircle size={11} className="shrink-0 text-emerald-300" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                  {isSelected && <div className="mt-3 text-2xs font-semibold text-cyan-100">Selected</div>}
                 </button>
               );
             })}
           </div>
         </div>
-        <div className="border-t border-ink-100/60 dark:border-white/10 p-6">
+
+        <div className="border-t border-white/12 bg-black/18 p-6">
           {success ? (
-            <div className="flex items-center gap-2 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-700 dark:text-green-400"><CheckCircle size={16} />{success}</div>
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-300/25 bg-emerald-300/12 px-4 py-3 text-sm text-emerald-100">
+              <CheckCircle size={16} />
+              {success}
+            </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-              <div className="flex-1 space-y-1">
-                <label className="text-xs font-medium text-ink-700 dark:text-ink-300">M-Pesa Phone Number</label>
-                <input type="tel" placeholder="e.g. 0712 345678" value={phone} onChange={e => setPhone(e.target.value)} className="input h-10 text-sm" disabled={loading} />
-                {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1 [&_label]:!text-white">
+                <PhoneInput label="M-Pesa Phone Number" value={phone} onChange={setPhone} disabled={loading} />
+                {error && <p className="mt-2 text-xs text-rose-200">{error}</p>}
               </div>
-              <button onClick={handleCheckout} disabled={!selected || loading} className="btn-accent h-10 px-5 flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay {selected ? `Ksh ${selected.price.toLocaleString()}` : "�"}</>}
+              <button
+                onClick={handleCheckout}
+                disabled={!selected || loading}
+                className="btn-accent flex h-10 shrink-0 items-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay {selected ? `Ksh ${selected.price.toLocaleString()}` : ""}</>}
               </button>
             </div>
           )}
-          <p className="mt-3 text-center text-[11px] text-ink-400 dark:text-ink-500">STK Push sent to your phone. Billed monthly, cancel anytime.</p>
+          <p className="mt-3 text-center text-[11px] text-white/56">
+            Your package activates only after confirmed M-Pesa payment.
+          </p>
         </div>
       </div>
     </div>

@@ -77,7 +77,8 @@ export class WorkspacesService {
         maxInstances: 9999,
         allowImages: true,
         expired: false,
-        subscriptionExpiresAt: null
+        subscriptionExpiresAt: null,
+        subscriptionCancelAt: null
       };
     }
 
@@ -101,7 +102,8 @@ export class WorkspacesService {
         maxInstances: 0,
         allowImages: false,
         expired: true,
-        subscriptionExpiresAt: workspace.subscriptionExpiresAt
+        subscriptionExpiresAt: workspace.subscriptionExpiresAt,
+        subscriptionCancelAt: workspace.subscriptionCancelAt
       };
     }
 
@@ -118,7 +120,8 @@ export class WorkspacesService {
       maxInstances: limits.maxInstances,
       allowImages: limits.allowImages,
       expired: false,
-      subscriptionExpiresAt: workspace.subscriptionExpiresAt
+      subscriptionExpiresAt: workspace.subscriptionExpiresAt,
+      subscriptionCancelAt: workspace.subscriptionCancelAt
     };
   }
 
@@ -135,7 +138,8 @@ export class WorkspacesService {
         maxInstances: 9999,
         allowImages: true,
         expired: false,
-        subscriptionExpiresAt: null
+        subscriptionExpiresAt: null,
+        subscriptionCancelAt: null
       };
     }
 
@@ -159,7 +163,8 @@ export class WorkspacesService {
         maxInstances: 0,
         allowImages: false,
         expired: true,
-        subscriptionExpiresAt: workspace.subscriptionExpiresAt
+        subscriptionExpiresAt: workspace.subscriptionExpiresAt,
+        subscriptionCancelAt: workspace.subscriptionCancelAt
       };
     }
 
@@ -176,7 +181,8 @@ export class WorkspacesService {
       maxInstances: limits.maxInstances,
       allowImages: limits.allowImages,
       expired: false,
-      subscriptionExpiresAt: workspace.subscriptionExpiresAt
+      subscriptionExpiresAt: workspace.subscriptionExpiresAt,
+      subscriptionCancelAt: workspace.subscriptionCancelAt
     };
   }
 

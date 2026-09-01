@@ -1,18 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   AlertTriangle, Copy, Plus, Trash2, Check,
-  Eye, EyeOff, Loader2, Save
+  Eye, EyeOff, Loader2, Save, CreditCard, CalendarDays
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
+import PaywallModal from "../components/PaywallModal";
 
-type Tab = "workspace" | "cerebro" | "api-keys" | "appearance" | "danger";
+type Tab = "workspace" | "cerebro" | "api-keys" | "subscription" | "appearance" | "danger";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "workspace", label: "Workspace" },
   { id: "cerebro", label: "Cerebro" },
   { id: "api-keys", label: "API Keys" },
+  { id: "subscription", label: "Subscription" },
   { id: "appearance", label: "Appearance" },
   { id: "danger", label: "Danger Zone" }
 ];
@@ -330,6 +332,144 @@ function ApiKeysTab() {
   );
 }
 
+interface BillingInfo {
+  plan: "FREE" | "BASIC" | "PREMIUM" | "PRO" | "ADMIN";
+  subscriptionExpiresAt: string | null;
+  subscriptionCancelAt: string | null;
+  activeInstances: number;
+  activeInstancesLimit: number;
+  allowImages: boolean;
+  expired: boolean;
+}
+
+/* ─── Subscription Tab ─── */
+function SubscriptionTab() {
+  const { workspaceId, accessToken, user } = useAuth();
+  const token = accessToken ?? undefined;
+  const [billing, setBilling] = useState<BillingInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [canceling, setCanceling] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshBilling = useCallback(async () => {
+    if (!workspaceId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch<BillingInfo>(`/api/workspaces/${workspaceId}/billing`, { accessToken: token });
+      setBilling(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load subscription.");
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, token]);
+
+  useEffect(() => {
+    void refreshBilling();
+  }, [refreshBilling]);
+
+  const handleCancel = async () => {
+    if (!workspaceId) return;
+    setCanceling(true);
+    setError(null);
+    try {
+      const data = await apiFetch<BillingInfo>(`/api/workspaces/${workspaceId}/billing/cancel`, {
+        method: "POST",
+        accessToken: token
+      });
+      setBilling(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel renewal.");
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const expiresAt = billing?.subscriptionExpiresAt
+    ? new Date(billing.subscriptionExpiresAt).toLocaleDateString()
+    : "No active package";
+  const cancelAt = billing?.subscriptionCancelAt
+    ? new Date(billing.subscriptionCancelAt).toLocaleDateString()
+    : null;
+  const isActive = Boolean(billing && billing.plan !== "FREE" && !billing.expired);
+
+  return (
+    <div className="max-w-3xl space-y-4">
+      <div className="rounded-xl border border-ink-100 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-surface-raised-dark">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-900 dark:text-white">
+              <CreditCard size={16} />
+              Subscription
+            </div>
+            <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
+              Manage the package for {user?.email ?? "this workspace"}.
+            </p>
+          </div>
+          <button onClick={() => setShowPaywall(true)} className="btn-primary shrink-0">
+            {isActive ? "Change package" : "Choose package"}
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="mt-6 flex items-center gap-2 text-sm text-ink-400">
+            <Loader2 size={14} className="animate-spin" />
+            Loading subscription...
+          </div>
+        ) : billing ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-ink-100 bg-ink-50 p-4 dark:border-white/10 dark:bg-black/10">
+              <div className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-ink-400">Current package</div>
+              <div className="mt-2 text-2xl font-bold text-ink-900 dark:text-white">{billing.plan}</div>
+              <div className={`mt-2 text-xs font-semibold ${isActive ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}>
+                {isActive ? "Active" : "Payment required"}
+              </div>
+            </div>
+            <div className="rounded-lg border border-ink-100 bg-ink-50 p-4 dark:border-white/10 dark:bg-black/10">
+              <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-ink-400">
+                <CalendarDays size={13} />
+                Expires
+              </div>
+              <div className="mt-2 text-lg font-semibold text-ink-900 dark:text-white">{expiresAt}</div>
+              {cancelAt && <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">Renewal canceled for {cancelAt}</div>}
+            </div>
+            <div className="rounded-lg border border-ink-100 bg-ink-50 p-4 dark:border-white/10 dark:bg-black/10">
+              <div className="text-xs font-medium uppercase tracking-wide text-ink-500 dark:text-ink-400">Usage</div>
+              <div className="mt-2 text-lg font-semibold text-ink-900 dark:text-white">
+                {billing.activeInstances} / {billing.activeInstancesLimit} devices
+              </div>
+              <div className="mt-2 text-xs text-ink-500 dark:text-ink-400">
+                Images {billing.allowImages ? "included" : "not included"}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {error && <p className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        {isActive && !billing?.subscriptionCancelAt && (
+          <button onClick={handleCancel} disabled={canceling} className="btn-ghost mt-5 gap-2 text-red-600 hover:text-red-700 dark:text-red-400">
+            {canceling ? <Loader2 size={14} className="animate-spin" /> : <AlertTriangle size={14} />}
+            Cancel next renewal
+          </button>
+        )}
+      </div>
+
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onSuccess={() => {
+            setShowPaywall(false);
+            void refreshBilling();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ─── Appearance Tab ─── */
 function AppearanceTab() {
   const { theme, toggleTheme } = useTheme();
@@ -459,12 +599,12 @@ export default function SettingsPage() {
 
   const allowedTabs = TABS.filter((tab) => {
     if (!isAdmin) {
-      return tab.id === "appearance" || tab.id === "danger";
+      return tab.id === "subscription" || tab.id === "appearance" || tab.id === "danger";
     }
     return true;
   });
 
-  const [activeTab, setActiveTab] = useState<Tab>(isAdmin ? "workspace" : "appearance");
+  const [activeTab, setActiveTab] = useState<Tab>(isAdmin ? "workspace" : "subscription");
 
   return (
     <div className="space-y-5">
@@ -490,6 +630,7 @@ export default function SettingsPage() {
           {activeTab === "workspace" && isAdmin && <WorkspaceTab />}
           {activeTab === "cerebro" && isAdmin && <CerebroTab />}
           {activeTab === "api-keys" && isAdmin && <ApiKeysTab />}
+          {activeTab === "subscription" && <SubscriptionTab />}
           {activeTab === "appearance" && <AppearanceTab />}
           {activeTab === "danger" && <DangerZoneTab />}
         </div>
@@ -497,3 +638,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

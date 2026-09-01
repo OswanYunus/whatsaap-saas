@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "@waas/database";
 import { workspacesService } from "./workspaces.service";
+import { AppError } from "../../plugins/error-handler";
 
 const checkoutSchema = z.object({
   plan: z.enum(["BASIC", "PREMIUM", "PRO"]),
@@ -24,10 +25,12 @@ export default async function billingRoutes(fastify: FastifyInstance) {
       return {
         plan: billing.plan,
         subscriptionExpiresAt: billing.subscriptionExpiresAt,
+        activeInstances: activeInstancesCount,
         activeInstancesCount,
         activeInstancesLimit: billing.maxInstances,
         allowImages: billing.allowImages,
-        expired: billing.expired
+        expired: billing.expired,
+        subscriptionCancelAt: billing.subscriptionCancelAt
       };
     }
   });
@@ -41,48 +44,66 @@ export default async function billingRoutes(fastify: FastifyInstance) {
       const { plan, phoneNumber: _phoneNumber } = checkoutSchema.parse(request.body);
       await workspacesService.assertMembership(id, request.authUser!.id);
 
-      // Simulate a small delay for STK Push processing
-      await new Promise(r => setTimeout(r, 1200));
+      const mpesaConfigured = Boolean(
+        process.env.MPESA_CONSUMER_KEY &&
+        process.env.MPESA_CONSUMER_SECRET &&
+        process.env.MPESA_SHORTCODE &&
+        process.env.MPESA_PASSKEY &&
+        process.env.MPESA_CALLBACK_URL
+      );
 
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days validity
-
-      // Update workspace subscription in db
-      await prisma.workspace.update({
-        where: { id },
-        data: {
-          plan,
-          subscriptionExpiresAt: expiresAt
-        }
-      });
+      if (!mpesaConfigured) {
+        throw new AppError(
+          "M-Pesa checkout is not configured yet. Package activation requires confirmed STK payment.",
+          503,
+          "MPESA_NOT_CONFIGURED"
+        );
+      }
 
       return {
-        success: true,
-        message: `Ksh ${plan === "BASIC" ? 500 : plan === "PREMIUM" ? 1000 : 1500} payment successful! M-Pesa Transaction ID: MP${Math.random().toString(36).substring(2, 10).toUpperCase()}. Package ${plan} is active.`,
-        plan,
-        subscriptionExpiresAt: expiresAt
+        success: false,
+        status: "PENDING",
+        message: "STK Push requested. Your package will activate after M-Pesa confirms payment.",
+        plan
       };
     }
   });
 
-  // 3. Cancel/Revert subscription
+  // 3. Cancel renewal at the end of the current billing period
   fastify.post("/workspaces/:id/billing/cancel", {
     preHandler: [fastify.authenticate],
     handler: async (request) => {
       const { id } = request.params as { id: string };
       await workspacesService.assertMembership(id, request.authUser!.id);
 
+      const workspace = await prisma.workspace.findUnique({ where: { id } });
+      if (!workspace) {
+        throw new AppError("Workspace not found", 404, "WORKSPACE_NOT_FOUND");
+      }
+
       await prisma.workspace.update({
         where: { id },
         data: {
-          plan: "FREE",
-          subscriptionExpiresAt: null
+          subscriptionCancelAt: workspace.subscriptionExpiresAt ?? new Date()
         }
+      });
+
+      const billing = await workspacesService.checkBilling(id, request.authUser!.id);
+      const activeInstancesCount = await prisma.instance.count({
+        where: { workspaceId: id }
       });
 
       return {
         success: true,
-        message: "Subscription canceled successfully."
+        message: "Subscription renewal canceled. Access remains active until the current package expires.",
+        plan: billing.plan,
+        subscriptionExpiresAt: billing.subscriptionExpiresAt,
+        activeInstances: activeInstancesCount,
+        activeInstancesCount,
+        activeInstancesLimit: billing.maxInstances,
+        allowImages: billing.allowImages,
+        expired: billing.expired,
+        subscriptionCancelAt: workspace.subscriptionExpiresAt
       };
     }
   });

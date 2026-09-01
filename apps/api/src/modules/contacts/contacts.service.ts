@@ -80,6 +80,7 @@ export class ContactsService {
 
   async create(input: CreateContactInput, userId: string) {
     await workspacesService.assertMembership(input.workspaceId, userId);
+    await this.assertActiveSubscription(input.workspaceId, userId);
 
     let cleanPhone = input.phoneNumber.replace(/\D/g, "");
     if (cleanPhone.startsWith("0")) {
@@ -113,6 +114,7 @@ export class ContactsService {
 
   async bulkImport(input: BulkImportContactInput, userId: string) {
     await workspacesService.assertMembership(input.workspaceId, userId);
+    await this.assertActiveSubscription(input.workspaceId, userId);
 
     // Fetch existing phone numbers in this workspace to check duplicates
     const existing = await prisma.contact.findMany({
@@ -223,6 +225,17 @@ export class ContactsService {
     }
     await workspacesService.assertMembership(contact.workspaceId, userId);
     return contact;
+  }
+
+  private async assertActiveSubscription(workspaceId: string, userId: string) {
+    const billing = await workspacesService.checkBilling(workspaceId, userId);
+    if (!billing.success || billing.expired || billing.plan === "FREE") {
+      throw new AppError(
+        "Active subscription required. Please upgrade your package.",
+        402,
+        "PAYMENT_REQUIRED"
+      );
+    }
   }
 }
 

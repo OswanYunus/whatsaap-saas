@@ -3,6 +3,7 @@ import { Download, Search, Upload, Users, Plus, Edit2, Trash2, Archive, CheckCir
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import PhoneInput from "../components/PhoneInput";
+import PaywallModal from "../components/PaywallModal";
 
 interface Contact {
   id: string;
@@ -24,7 +25,7 @@ interface ImportReport {
 }
 
 export default function ContactsPage() {
-  const { workspaceId, accessToken } = useAuth();
+  const { workspaceId, accessToken, user } = useAuth();
 
   // List & Filter States
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -46,6 +47,8 @@ export default function ContactsPage() {
   // Modals States
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isImporterOpen, setIsImporterOpen] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [billingActive, setBillingActive] = useState<boolean | null>(null);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   
   // Single Contact Form State
@@ -60,6 +63,27 @@ export default function ContactsPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importReport, setImportReport] = useState<ImportReport | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  const fetchBilling = useCallback(async () => {
+    if (user?.isAdmin) {
+      setBillingActive(true);
+      return;
+    }
+    if (!workspaceId || !accessToken) return;
+    try {
+      const billing = await apiFetch<{ plan: string; expired: boolean }>(
+        `/api/workspaces/${workspaceId}/billing`,
+        { accessToken }
+      );
+      setBillingActive(billing.plan !== "FREE" && !billing.expired);
+    } catch {
+      setBillingActive(false);
+    }
+  }, [workspaceId, accessToken, user?.isAdmin]);
+
+  useEffect(() => {
+    fetchBilling();
+  }, [fetchBilling]);
 
   // Fetch groups
   const fetchGroups = useCallback(async () => {
@@ -170,6 +194,10 @@ export default function ContactsPage() {
   };
 
   const openCreateModal = () => {
+    if (billingActive !== true) {
+      setShowPaywall(true);
+      return;
+    }
     setEditingContact(null);
     setFormFullName("");
     setFormPhoneNumber("");
@@ -365,6 +393,17 @@ export default function ContactsPage() {
 
   return (
     <div className="space-y-5">
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          onSuccess={() => {
+            setShowPaywall(false);
+            fetchBilling();
+          }}
+          canClose
+        />
+      )}
+
       {/* Header section */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="page-header">
@@ -374,7 +413,15 @@ export default function ContactsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => { setCsvFile(null); setImportReport(null); setIsImporterOpen(true); }} className="btn-outline">
+          <button onClick={() => {
+            if (billingActive !== true) {
+              setShowPaywall(true);
+              return;
+            }
+            setCsvFile(null);
+            setImportReport(null);
+            setIsImporterOpen(true);
+          }} className="btn-outline">
             <Upload size={14} strokeWidth={1.75} /> Import CSV
           </button>
           <button onClick={handleExportCsv} className="btn-outline" disabled={contacts.length === 0}>

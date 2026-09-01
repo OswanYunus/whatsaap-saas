@@ -86,6 +86,7 @@ model Workspace {
   name                  String
   plan                  Plan                @default(FREE)
   subscriptionExpiresAt DateTime?
+  subscriptionCancelAt  DateTime?
   createdAt             DateTime            @default(now())
 
   members     WorkspaceMember[]

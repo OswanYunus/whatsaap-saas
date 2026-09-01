@@ -4,6 +4,7 @@ import { ArrowLeft, QrCode, Phone, RefreshCw, Sparkles, CheckCircle2, AlertCircl
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import StatusBadge from "../components/StatusBadge";
+import PaywallModal from "../components/PaywallModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -92,8 +93,9 @@ const COUNTRIES: Country[] = [
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 export default function InstanceConnectPage() {
-  const { workspaceId, accessToken } = useAuth();
+  const { workspaceId, accessToken, user } = useAuth();
   const navigate = useNavigate();
+  const [billingActive, setBillingActive] = useState<boolean | null>(null);
 
   const [step, setStep] = useState(1);
   const [instanceName, setInstanceName] = useState("");
@@ -121,6 +123,27 @@ export default function InstanceConnectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const sseRef = useRef<AbortController | null>(null);
+
+  const refreshBilling = async () => {
+    if (user?.isAdmin) {
+      setBillingActive(true);
+      return;
+    }
+    if (!workspaceId || !accessToken) return;
+    try {
+      const billing = await apiFetch<{ plan: string; expired: boolean }>(
+        `/api/workspaces/${workspaceId}/billing`,
+        { accessToken }
+      );
+      setBillingActive(billing.plan !== "FREE" && !billing.expired);
+    } catch {
+      setBillingActive(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshBilling();
+  }, [workspaceId, accessToken, user?.isAdmin]);
 
   // Handle outside clicks to close country dropdown
   useEffect(() => {
@@ -327,6 +350,17 @@ export default function InstanceConnectPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-5">
+      {billingActive === false && (
+        <PaywallModal
+          onClose={() => navigate("/instances")}
+          onSuccess={() => {
+            setBillingActive(true);
+            refreshBilling();
+          }}
+          canClose
+        />
+      )}
+
       <Link
         to="/instances"
         className="inline-flex items-center gap-1.5 text-[13px] text-ink-400 transition-colors duration-150 hover:text-ink-600 dark:hover:text-ink-200"

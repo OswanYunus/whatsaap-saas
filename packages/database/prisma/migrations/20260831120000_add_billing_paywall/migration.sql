@@ -1,0 +1,19 @@
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'Plan') THEN
+    CREATE TYPE "Plan" AS ENUM ('FREE', 'BASIC', 'PREMIUM', 'PRO');
+  END IF;
+END $$;
+
+ALTER TABLE "Workspace"
+  ADD COLUMN IF NOT EXISTS "plan" "Plan" NOT NULL DEFAULT 'FREE',
+  ADD COLUMN IF NOT EXISTS "subscriptionExpiresAt" TIMESTAMP(3);
+
+ALTER TABLE "CampaignTemplate"
+  ADD COLUMN IF NOT EXISTS "mediaUrl" TEXT;
+
+ALTER TABLE "Campaign"
+  ADD COLUMN IF NOT EXISTS "mediaUrl" TEXT;
+
+ALTER TABLE "Message"
+  ADD COLUMN IF NOT EXISTS "mediaUrl" TEXT;

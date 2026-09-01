@@ -32,4 +32,9 @@ export default async function adminRoutes(fastify: FastifyInstance) {
     preHandler: [fastify.authenticate, superUserGuard],
     handler: adminController.resetUserPassword
   });
+
+  fastify.post("/admin/users/:id/package", {
+    preHandler: [fastify.authenticate, superUserGuard],
+    handler: adminController.grantPackage
+  });
 }

@@ -14,10 +14,14 @@ interface AdminUser {
   createdAt: string;
   lastLoginAt: string | null;
   lastActiveAt: string | null;
+  workspaceId: string | null;
   plan: string;
   subscriptionExpiresAt: string | null;
+  subscriptionCancelAt: string | null;
   workspaceName: string;
 }
+
+type GrantPlan = "FREE" | "BASIC" | "PREMIUM" | "PRO";
 
 export default function AdminDashboardPage() {
   const { accessToken, user } = useAuth();
@@ -32,6 +36,10 @@ export default function AdminDashboardPage() {
   const [newPassword, setNewPassword] = useState("");
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState<boolean>(false);
+  const [grantingUser, setGrantingUser] = useState<AdminUser | null>(null);
+  const [grantPlan, setGrantPlan] = useState<GrantPlan>("PREMIUM");
+  const [grantDays, setGrantDays] = useState(30);
+  const [grantError, setGrantError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     if (!token) return;
@@ -102,6 +110,39 @@ export default function AdminDashboardPage() {
       }, 1500);
     } catch (err) {
       setResetError(err instanceof Error ? err.message : "Failed to reset password");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleGrantPackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!grantingUser || !token) return;
+    setActionLoading(`grant-${grantingUser.id}`);
+    setGrantError(null);
+    try {
+      const res = await apiFetch<{
+        success: boolean;
+        plan: string;
+        subscriptionExpiresAt: string | null;
+        subscriptionCancelAt: string | null;
+      }>(
+        `/api/admin/users/${grantingUser.id}/package`,
+        {
+          method: "POST",
+          accessToken: token,
+          body: JSON.stringify({ plan: grantPlan, days: grantDays })
+        }
+      );
+      setUsers((prev) => prev.map((u) => u.id === grantingUser.id ? {
+        ...u,
+        plan: res.plan,
+        subscriptionExpiresAt: res.subscriptionExpiresAt,
+        subscriptionCancelAt: res.subscriptionCancelAt
+      } : u));
+      setGrantingUser(null);
+    } catch (err) {
+      setGrantError(err instanceof Error ? err.message : "Failed to grant package");
     } finally {
       setActionLoading(null);
     }
@@ -225,6 +266,9 @@ export default function AdminDashboardPage() {
                             <button onClick={() => { setResettingUser(u); setNewPassword(""); setResetError(null); setResetSuccess(false); }} title="Reset Password" className="flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20 transition-colors">
                               <Key size={10} /> Password
                             </button>
+                            <button onClick={() => { setGrantingUser(u); setGrantPlan((u.plan === "BASIC" || u.plan === "PREMIUM" || u.plan === "PRO") ? u.plan : "PREMIUM"); setGrantDays(30); setGrantError(null); }} title="Grant package" className="flex items-center gap-1 rounded-md bg-green-500/10 px-2 py-1 text-2xs font-medium text-green-700 transition-colors hover:bg-green-500/20 dark:text-green-400">
+                              <Package size={10} /> Package
+                            </button>
                             <button onClick={() => toggleElevate(u.id)} disabled={actionLoading === `elevate-${u.id}`} title={u.isAdmin ? "Remove admin" : "Make admin"} className={`flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium transition-colors ${u.isAdmin ? "bg-accent-500/10 text-accent-600 hover:bg-accent-500/20 dark:text-accent-400" : "bg-ink-100 text-ink-500 hover:bg-ink-200 dark:bg-white/10 dark:text-ink-300 dark:hover:bg-white/20"}`}>
                               {actionLoading === `elevate-${u.id}` ? <RefreshCw size={10} className="animate-spin" /> : <ShieldCheck size={10} />}
                               {u.isAdmin ? "Revoke" : "Elevate"}
@@ -244,6 +288,95 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Package grant modal overlay */}
+      {grantingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="card w-full max-w-sm space-y-4 p-6 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-800 dark:text-white">
+                <Package size={16} className="text-green-600 dark:text-green-400" />
+                Grant Package
+              </h3>
+              <button
+                onClick={() => setGrantingUser(null)}
+                className="btn-ghost h-7 w-7 p-0"
+                aria-label="Close grant package modal"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-xs text-ink-400">
+              Assign a package to <span className="font-medium text-ink-700 dark:text-ink-200">{grantingUser.email}</span> for testing or support.
+            </p>
+
+            <form onSubmit={handleGrantPackage} className="space-y-4">
+              {grantError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+                  {grantError}
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-ink-700 dark:text-ink-200">Package</label>
+                <select
+                  value={grantPlan}
+                  onChange={(e) => setGrantPlan(e.target.value as GrantPlan)}
+                  className="input"
+                  disabled={actionLoading === `grant-${grantingUser.id}`}
+                >
+                  <option value="FREE">Free / remove package</option>
+                  <option value="BASIC">Basic - 1 device</option>
+                  <option value="PREMIUM">Premium - 5 devices</option>
+                  <option value="PRO">Pro - 10 devices + images</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-ink-700 dark:text-ink-200">Access duration</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={366}
+                  value={grantDays}
+                  onChange={(e) => setGrantDays(Number(e.target.value))}
+                  className="input"
+                  disabled={grantPlan === "FREE" || actionLoading === `grant-${grantingUser.id}`}
+                />
+                <p className="text-2xs text-ink-400">
+                  Paid packages expire after this number of days. Free removes paid access.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setGrantingUser(null)}
+                  className="btn-outline px-3 py-1.5 text-xs"
+                  disabled={actionLoading === `grant-${grantingUser.id}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-accent flex items-center gap-1 px-3 py-1.5 text-xs"
+                  disabled={actionLoading === `grant-${grantingUser.id}`}
+                >
+                  {actionLoading === `grant-${grantingUser.id}` ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save package"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Password reset modal overlay */}
       {resettingUser && (

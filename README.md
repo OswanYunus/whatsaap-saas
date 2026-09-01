@@ -1,11 +1,17 @@
-# WhatsApp Automation SaaS — Project Foundation
+# Cerebro WhatsApp SaaS
 
-A multi-tenant platform for connecting WhatsApp accounts, managing contacts,
-running campaigns, and tracking delivery logs. This repository currently
-contains the **project foundation only**: server bootstrap, auth scaffold,
-database schema, queue wiring, and an empty dashboard shell. Feature logic
-(campaign sending, WhatsApp pairing, delivery tracking) is intentionally not
-yet implemented — see the "What's stubbed" section below.
+Cerebro is a multi-tenant WhatsApp messaging platform for businesses. It supports customer accounts, workspaces, WhatsApp instance connection, contacts, campaigns, scheduled messages, billing packages, admin controls, and a Developer API for external system integrations.
+
+Production URL:
+
+```text
+https://wa.tukonectdigital.co.ke
+```
+
+## Documentation
+
+- [Full System Documentation](docs/SYSTEM_DOCUMENTATION.md)
+- [Developer API Guide](docs/DEVELOPER_API.md)
 
 ## Stack
 
@@ -16,7 +22,7 @@ yet implemented — see the "What's stubbed" section below.
 | Auth           | JWT (`@fastify/jwt`)             |
 | Validation     | Zod                              |
 | Queue          | BullMQ + Redis                   |
-| WhatsApp layer | Baileys (contract only, not wired up yet) |
+| WhatsApp layer | Baileys |
 | Frontend       | React + Vite + TypeScript + Tailwind CSS |
 | Monorepo       | pnpm workspaces                  |
 
@@ -95,26 +101,18 @@ docker-compose.yml  Postgres + Redis for local dev
 
    The dashboard is served at `http://localhost:5173`.
 
-## What's implemented vs. stubbed
+## Main Features
 
-**Implemented:**
-- Fastify server with CORS, JWT, structured logging (pino), and a
-  centralized error-handling plugin (`AppError` + Zod error formatting).
-- Prisma schema for all seven core entities (User, Workspace,
-  WhatsAppInstance, Contact, Campaign, Message, ApiKey).
-- Auth module: register/login/me, password hashing (bcrypt), JWT issuing.
-- Users module: profile lookup.
-- BullMQ queue + worker skeleton for message sending.
-- Dashboard shell: routing, sidebar, layout, six empty pages.
+- Authentication and workspace access.
+- WhatsApp instance connection through Baileys.
+- Contacts, groups, tags, and imports.
+- Campaigns, scheduled campaigns, recurring campaign templates, and message logs.
+- BullMQ workers for queued message sending.
+- Billing packages with instance and image sending limits.
+- Admin dashboard with user management and manual package grants.
+- Developer API with workspace API keys, rate limiting, and request logging.
 
-**Stubbed / intentionally not built yet:**
-- `WhatsAppService.sendMessage` — throws "not implemented"; defines the
-  contract the rest of the app will call once Baileys is wired up.
-- Baileys session creation, QR pairing, and connection-event handling.
-- Campaign creation/scheduling logic and contact import.
-- Delivery log UI and real dashboard data (pages are placeholders).
-- Refresh-token rotation and workspace switching UI.
-- Rate limiting per WhatsApp instance.
+For implementation details, deployment notes, API examples, and integration steps, read the documents in the `docs/` directory.
 
 ## Scripts (root `package.json`)
 

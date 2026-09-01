@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import PaywallModal from "../components/PaywallModal";
 
 /* ─────────────────────────── Types ─────────────────────────── */
 
@@ -125,9 +126,10 @@ function Tooltip({ text }: { text: string }) {
 /* ─────────────────────────── Main Page ─────────────────────────── */
 
 export default function CampaignCreatePage() {
-  const { accessToken, workspaceId, workspaces } = useAuth();
+  const { accessToken, workspaceId, workspaces, user } = useAuth();
   const navigate = useNavigate();
   const token = accessToken ?? undefined;
+  const [billingActive, setBillingActive] = useState<boolean | null>(null);
 
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -158,6 +160,27 @@ export default function CampaignCreatePage() {
     maxDelaySeconds: 9,
     maxPerMinute: 12
   });
+
+  const refreshBilling = useCallback(async () => {
+    if (user?.isAdmin) {
+      setBillingActive(true);
+      return;
+    }
+    if (!workspaceId) return;
+    try {
+      const billing = await apiFetch<{ plan: string; expired: boolean }>(
+        `/api/workspaces/${workspaceId}/billing`,
+        { accessToken: token }
+      );
+      setBillingActive(billing.plan !== "FREE" && !billing.expired);
+    } catch {
+      setBillingActive(false);
+    }
+  }, [workspaceId, token, user?.isAdmin]);
+
+  useEffect(() => {
+    refreshBilling();
+  }, [refreshBilling]);
 
   // Load instances and contact metadata
   useEffect(() => {
@@ -302,6 +325,17 @@ export default function CampaignCreatePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {billingActive === false && (
+        <PaywallModal
+          onClose={() => navigate("/campaigns")}
+          onSuccess={() => {
+            setBillingActive(true);
+            refreshBilling();
+          }}
+          canClose
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
