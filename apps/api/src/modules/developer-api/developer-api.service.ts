@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "@waas/database";
 import { AppError } from "../../plugins/error-handler";
-import { messageQueue, campaignSchedulerQueue } from "../../queue/queues/message.queue";
+import { messageQueue, campaignSchedulerQueue, reserveInstanceSendDelay } from "../../queue/queues/message.queue";
 import { campaignsService } from "../campaigns/campaigns.service";
 import { campaignTemplateService } from "../campaigns/campaign-template.service";
 import { workspacesService } from "../workspaces/workspaces.service";
@@ -156,6 +156,8 @@ export class DeveloperApiService {
       }
     });
 
+    const safeDelay = await reserveInstanceSendDelay(instance.id, delay);
+
     await messageQueue.add(
       "send-message",
       {
@@ -164,7 +166,7 @@ export class DeveloperApiService {
         to: input.recipient,
         content: input.message
       },
-      delay > 0 ? { delay } : undefined
+      safeDelay > 0 ? { delay: safeDelay } : undefined
     );
 
     return {

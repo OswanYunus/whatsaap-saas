@@ -214,6 +214,40 @@ export default async function billingRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get("/workspaces/:id/billing/payments/:paymentId", {
+    preHandler: [fastify.authenticate],
+    handler: async (request) => {
+      const { id, paymentId } = request.params as { id: string; paymentId: string };
+      await workspacesService.assertMembership(id, request.authUser!.id);
+
+      const payment = await prisma.mpesaPayment.findFirst({
+        where: {
+          id: paymentId,
+          workspaceId: id
+        },
+        select: {
+          id: true,
+          status: true,
+          plan: true,
+          amount: true,
+          resultCode: true,
+          resultDescription: true,
+          responseDescription: true,
+          customerMessage: true,
+          mpesaReceiptNumber: true,
+          createdAt: true,
+          completedAt: true
+        }
+      });
+
+      if (!payment) {
+        throw new AppError("Payment not found", 404, "PAYMENT_NOT_FOUND");
+      }
+
+      return payment;
+    }
+  });
+
   fastify.post("/billing/mpesa/callback", async (request, reply) => {
     const body = request.body as {
       Body?: {

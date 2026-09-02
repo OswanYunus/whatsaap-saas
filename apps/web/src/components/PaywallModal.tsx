@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Zap, Star, Crown, CheckCircle, Smartphone, Image, RefreshCw, CreditCard } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -55,6 +55,7 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
 
   const handleCheckout = async () => {
     if (!selected || !workspaceId || !accessToken) return;
@@ -67,9 +68,10 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
     setError(null);
     setSuccess(null);
     setPending(null);
+    setPaymentId(null);
 
     try {
-      const res = await apiFetch<{ success: boolean; status?: string; message: string }>(
+      const res = await apiFetch<{ success: boolean; status?: string; message: string; paymentId?: string }>(
         `/api/workspaces/${workspaceId}/billing/checkout`,
         {
           method: "POST",
@@ -82,6 +84,7 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
         setSuccess(res.message);
         setTimeout(() => onSuccess(), 1200);
       } else if (res.status === "PENDING") {
+        setPaymentId(res.paymentId ?? null);
         setPending(res.message || "STK Push sent. Complete payment on your phone to activate this package.");
       } else {
         setError(res.message || "Waiting for M-Pesa confirmation before activating this package.");
@@ -98,6 +101,28 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
     setVerifying(true);
     setError(null);
     try {
+      if (paymentId) {
+        const payment = await apiFetch<{
+          status: "PENDING" | "COMPLETED" | "FAILED";
+          resultDescription?: string | null;
+          responseDescription?: string | null;
+        }>(
+          `/api/workspaces/${workspaceId}/billing/payments/${paymentId}`,
+          { accessToken }
+        );
+
+        if (payment.status === "FAILED") {
+          setPending(null);
+          setError(payment.resultDescription || payment.responseDescription || "M-Pesa payment was not completed. Try again.");
+          return;
+        }
+
+        if (payment.status === "PENDING") {
+          setPending("Still waiting for M-Pesa confirmation. Complete the STK prompt on your phone, then check again.");
+          return;
+        }
+      }
+
       const billing = await apiFetch<{ plan: string; expired: boolean }>(
         `/api/workspaces/${workspaceId}/billing`,
         { accessToken }
@@ -114,6 +139,14 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
       setVerifying(false);
     }
   };
+
+  useEffect(() => {
+    if (!paymentId || success || error) return;
+    const timer = window.setInterval(() => {
+      void verifyPayment();
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [paymentId, success, error]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.28),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.94),rgba(17,24,39,0.9)_48%,rgba(8,47,73,0.88))] p-4 backdrop-blur-sm">

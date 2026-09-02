@@ -2,7 +2,7 @@ import { prisma } from "@waas/database";
 import crypto from "node:crypto";
 import { AppError } from "../../plugins/error-handler";
 import { workspacesService } from "../workspaces/workspaces.service";
-import { messageQueue } from "../../queue/queues/message.queue";
+import { messageQueue, reserveInstanceSendDelay } from "../../queue/queues/message.queue";
 import type {
   CreateCampaignInput,
   UpdateCampaignInput,
@@ -337,6 +337,8 @@ export class CampaignsService {
       const delay = Math.floor(Math.random() * (campaign.maxDelaySeconds - campaign.minDelaySeconds + 1)) + campaign.minDelaySeconds;
       currentDelay += delay;
 
+      const safeDelay = await reserveInstanceSendDelay(campaign.instanceId, currentDelay * 1000);
+
       await messageQueue.add(
         "send-message",
         {
@@ -355,7 +357,7 @@ export class CampaignsService {
           }
         },
         {
-          delay: currentDelay * 1000
+          delay: safeDelay
         }
       );
     }
