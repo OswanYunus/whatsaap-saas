@@ -177,15 +177,17 @@ Granting Free removes paid access. Granting a paid plan sets an expiry date and 
 
 ## M-Pesa Checkout Status
 
-The checkout flow is intentionally locked until real Daraja credentials are configured.
+The checkout flow uses Safaricom Daraja STK Push. The system does not activate a package just because the user clicked Pay. Package activation happens only after Safaricom sends a successful callback for the checkout request.
 
-The system does not activate a package just because the user clicked Pay. Package activation must happen only after M-Pesa confirms payment.
-
-Current checkout behavior:
+Checkout behavior:
 
 - If M-Pesa environment variables are missing, the API returns `MPESA_NOT_CONFIGURED`.
-- The package remains inactive.
-- The paywall remains in place.
+- If M-Pesa accepts the STK request, Cerebro stores a pending payment.
+- The customer completes the prompt on their phone.
+- Safaricom calls the callback URL.
+- If the callback result code is `0`, Cerebro marks the payment as completed and activates the package for 30 days.
+- If the callback result is not successful, the payment is marked as failed and the package remains inactive.
+- Duplicate successful callbacks are ignored after the first completion.
 
 Required Daraja values:
 
@@ -195,6 +197,11 @@ MPESA_CONSUMER_SECRET
 MPESA_SHORTCODE
 MPESA_PASSKEY
 MPESA_CALLBACK_URL
+MPESA_STK_PUSH_URL
+MPESA_OAUTH_URL
+MPESA_TRANSACTION_TYPE
+MPESA_ACCOUNT_REFERENCE
+MPESA_TRANSACTION_DESC
 ```
 
 Recommended callback URL:
@@ -202,6 +209,8 @@ Recommended callback URL:
 ```text
 https://wa.tukonectdigital.co.ke/api/billing/mpesa/callback
 ```
+
+Sandbox can use `MPESA_AMOUNT_OVERRIDE=1` so tests charge Ksh 1 while still activating the selected package only after callback success.
 
 ## WhatsApp Instances
 

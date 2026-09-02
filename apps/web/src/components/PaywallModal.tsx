@@ -51,8 +51,10 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
   const [selected, setSelected] = useState<typeof PLANS[number] | null>(PLANS[1]);
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
 
   const handleCheckout = async () => {
     if (!selected || !workspaceId || !accessToken) return;
@@ -64,9 +66,10 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setPending(null);
 
     try {
-      const res = await apiFetch<{ success: boolean; message: string }>(
+      const res = await apiFetch<{ success: boolean; status?: string; message: string }>(
         `/api/workspaces/${workspaceId}/billing/checkout`,
         {
           method: "POST",
@@ -78,6 +81,8 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
       if (res.success) {
         setSuccess(res.message);
         setTimeout(() => onSuccess(), 1200);
+      } else if (res.status === "PENDING") {
+        setPending(res.message || "STK Push sent. Complete payment on your phone to activate this package.");
       } else {
         setError(res.message || "Waiting for M-Pesa confirmation before activating this package.");
       }
@@ -85,6 +90,28 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
       setError(e instanceof Error ? e.message : "Payment could not be started. Try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const verifyPayment = async () => {
+    if (!workspaceId || !accessToken) return;
+    setVerifying(true);
+    setError(null);
+    try {
+      const billing = await apiFetch<{ plan: string; expired: boolean }>(
+        `/api/workspaces/${workspaceId}/billing`,
+        { accessToken }
+      );
+      if (billing.plan !== "FREE" && !billing.expired) {
+        setSuccess("Payment confirmed. Your package is active.");
+        setTimeout(() => onSuccess(), 800);
+      } else {
+        setPending("Still waiting for M-Pesa confirmation. Complete the STK prompt on your phone, then check again.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not verify payment yet.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -167,6 +194,21 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
             <div className="flex items-center gap-2 rounded-lg border border-emerald-300/25 bg-emerald-300/12 px-4 py-3 text-sm text-emerald-100">
               <CheckCircle size={16} />
               {success}
+            </div>
+          ) : pending ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/12 px-4 py-3 text-sm text-cyan-100">
+                <RefreshCw size={16} className="animate-spin" />
+                {pending}
+              </div>
+              <button
+                onClick={verifyPayment}
+                disabled={verifying}
+                className="btn-outline w-full border-white/20 text-white hover:bg-white/10 disabled:opacity-50"
+              >
+                {verifying ? "Checking payment..." : "Check payment status"}
+              </button>
+              {error && <p className="text-center text-xs text-rose-200">{error}</p>}
             </div>
           ) : (
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">

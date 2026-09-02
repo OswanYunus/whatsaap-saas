@@ -60,6 +60,12 @@ enum AudienceType {
   MANUAL
 }
 
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id                         String              @id @default(cuid())
   email                      String              @unique
@@ -95,6 +101,7 @@ model Workspace {
   campaigns   Campaign[]
   apiKeys     ApiKey[]
   apiRequestLogs DeveloperApiRequestLog[]
+  payments    MpesaPayment[]
   templates   CampaignTemplate[]
   settings    WorkspaceSettings?
 }
@@ -339,4 +346,33 @@ model DeveloperApiRequestLog {
 
   @@index([workspaceId, createdAt])
   @@index([apiKeyId, createdAt])
+}
+
+model MpesaPayment {
+  id                String        @id @default(cuid())
+  workspaceId       String
+  userId            String?
+  plan              Plan
+  amount            Int
+  phoneNumber       String
+  merchantRequestId String?
+  checkoutRequestId String?       @unique
+  responseCode      String?
+  responseDescription String?
+  customerMessage   String?
+  resultCode        Int?
+  resultDescription String?
+  mpesaReceiptNumber String?
+  transactionDate   String?
+  status            PaymentStatus @default(PENDING)
+  rawRequest         Json?
+  rawCallback        Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  completedAt        DateTime?
+
+  workspace          Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([status, createdAt])
 }
