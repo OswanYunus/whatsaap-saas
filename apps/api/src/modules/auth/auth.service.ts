@@ -62,7 +62,36 @@ export class AuthService {
     await emailService.sendVerificationCode(input.email, verificationCode);
     logger.info(`\n[EMAIL VERIFICATION] Sent code to ${input.email}\n`);
 
+    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
+    try {
+      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
+      if (superAdminInstance && input.phoneNumber) {
+        const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
+        await whatsappManager.sendMessage(superAdminInstance.id, input.phoneNumber, text);
+        logger.info(`Sent verification code to ${input.phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
+      }
+    } catch (err) {
+      logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
+    }
+
     return user;
+  }
+
+  private async getSuperAdminWhatsAppInstance() {
+    return prisma.instance.findFirst({
+      where: {
+        status: "CONNECTED",
+        workspace: {
+          members: {
+            some: {
+              user: {
+                email: "oswanbarackyunus@gmail.com"
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   async verifyEmail(email: string, code: string) {
@@ -116,6 +145,18 @@ export class AuthService {
 
     await emailService.sendVerificationCode(email, verificationCode);
     logger.info(`\n[EMAIL VERIFICATION RESEND] Sent new code to ${email}\n`);
+
+    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
+    try {
+      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
+      if (superAdminInstance && user.phoneNumber) {
+        const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
+        await whatsappManager.sendMessage(superAdminInstance.id, user.phoneNumber, text);
+        logger.info(`Resent verification code to ${user.phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
+      }
+    } catch (err) {
+      logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
+    }
 
     return { success: true };
   }
@@ -179,15 +220,13 @@ export class AuthService {
 
     logger.info(`\n[PASSWORD RESET] Code for ${user.email} (${phoneNumber}) is: ${code}\n`);
 
-    // Try sending code via WhatsApp if there's any active connection
+    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
     try {
-      const instances = await prisma.instance.findMany({
-        where: { status: "CONNECTED" }
-      });
-      if (instances.length > 0) {
+      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
+      if (superAdminInstance) {
         const text = `Your Tukonnect digital password reset code is: ${code}`;
-        await whatsappManager.sendMessage(instances[0].id, phoneNumber, text);
-        logger.info(`Sent password reset code to ${phoneNumber} via WhatsApp`);
+        await whatsappManager.sendMessage(superAdminInstance.id, phoneNumber, text);
+        logger.info(`Sent password reset code to ${phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp reset code to ${phoneNumber}: ${(err as Error).message}`);
