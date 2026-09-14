@@ -4,6 +4,7 @@ import { AppError } from "../../plugins/error-handler";
 import type { RegisterInput, LoginInput, ResetPasswordInput } from "./auth.schema";
 import { logger } from "../../utils/logger";
 import { whatsappManager } from "../whatsapp/whatsapp.manager";
+import { emailService } from "../../services/email.service";
 
 const SALT_ROUNDS = 10;
 
@@ -36,7 +37,7 @@ export class AuthService {
         passwordHash,
         name: input.name,
         phoneNumber: input.phoneNumber,
-        isVerified: true,
+        isVerified: false,
         verificationCode,
         verificationCodeExpiresAt,
         isAdmin
@@ -57,31 +58,29 @@ export class AuthService {
       }
     });
 
-    // Send code (Log to console/logger so user can see it in VPS logs)
-    logger.info(`\n[EMAIL VERIFICATION] Code for ${input.email} is: ${verificationCode}\n`);
-    
-    // Try sending code via WhatsApp if there's any active connection
-    try {
-      const instances = await prisma.instance.findMany({
-        where: { status: "CONNECTED" }
-      });
-      if (instances.length > 0) {
-        // Send via the first active instance
-        const text = `Your Tukonnect digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(instances[0].id, input.phoneNumber, text);
-        logger.info(`Sent email verification code to ${input.phoneNumber} via WhatsApp instance ${instances[0].id}`);
-      }
-    } catch (err) {
-      logger.warn(`Failed to send WhatsApp verification to ${input.phoneNumber}: ${(err as Error).message}`);
-    }
+    // Send real email verification code via SMTP
+    await emailService.sendVerificationCode(input.email, verificationCode);
+    logger.info(`\n[EMAIL VERIFICATION] Sent code to ${input.email}\n`);
 
     return user;
   }
 
-  async verifyEmail(email: string, _code: string) {
+  async verifyEmail(email: string, code: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new AppError("Account not found", 404, "NOT_FOUND");
+    }
+
+    if (user.isVerified) {
+      return user;
+    }
+
+    if (user.verificationCode !== code) {
+      throw new AppError("Invalid verification code. Please check your email.", 400, "INVALID_CODE");
+    }
+
+    if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
+      throw new AppError("Verification code has expired. Please request a new code.", 400, "EXPIRED_CODE");
     }
 
     return prisma.user.update({
@@ -115,20 +114,8 @@ export class AuthService {
       }
     });
 
-    logger.info(`\n[EMAIL VERIFICATION RESEND] Code for ${email} is: ${verificationCode}\n`);
-
-    try {
-      const instances = await prisma.instance.findMany({
-        where: { status: "CONNECTED" }
-      });
-      if (instances.length > 0 && user.phoneNumber) {
-        const text = `Your Tukonnect digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(instances[0].id, user.phoneNumber, text);
-        logger.info(`Resent email verification code to ${user.phoneNumber} via WhatsApp`);
-      }
-    } catch (err) {
-      logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
-    }
+    await emailService.sendVerificationCode(email, verificationCode);
+    logger.info(`\n[EMAIL VERIFICATION RESEND] Sent new code to ${email}\n`);
 
     return { success: true };
   }
