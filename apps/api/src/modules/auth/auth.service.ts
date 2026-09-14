@@ -36,7 +36,7 @@ export class AuthService {
         passwordHash,
         name: input.name,
         phoneNumber: input.phoneNumber,
-        isVerified: false,
+        isVerified: true,
         verificationCode,
         verificationCodeExpiresAt,
         isAdmin
@@ -78,22 +78,10 @@ export class AuthService {
     return user;
   }
 
-  async verifyEmail(email: string, code: string) {
+  async verifyEmail(email: string, _code: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new AppError("Account not found", 404, "NOT_FOUND");
-    }
-
-    if (user.isVerified) {
-      return user;
-    }
-
-    if (user.verificationCode !== code) {
-      throw new AppError("Invalid verification code", 400, "INVALID_CODE");
-    }
-
-    if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
-      throw new AppError("Verification code has expired", 400, "EXPIRED_CODE");
     }
 
     return prisma.user.update({
