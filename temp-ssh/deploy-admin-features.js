@@ -22,6 +22,7 @@ async function run() {
   await exec('git fetch --all');
   await exec('git reset --hard origin/main');
   await exec('git pull origin main');
+  await exec('pnpm install');
 
   // Apply new database schema fields
   console.log('\n--- Sychronizing database schema ---');
