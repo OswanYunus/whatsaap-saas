@@ -62,13 +62,13 @@ export class AuthService {
     await emailService.sendVerificationCode(input.email, verificationCode);
     logger.info(`\n[EMAIL VERIFICATION] Sent code to ${input.email}\n`);
 
-    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
+    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
     try {
-      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
-      if (superAdminInstance && input.phoneNumber) {
+      const otpInstance = await this.getSystemOTPWhatsAppInstance();
+      if (otpInstance && input.phoneNumber) {
         const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(superAdminInstance.id, input.phoneNumber, text);
-        logger.info(`Sent verification code to ${input.phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
+        await whatsappManager.sendMessage(otpInstance.id, input.phoneNumber, text);
+        logger.info(`Sent verification code to ${input.phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
@@ -77,21 +77,42 @@ export class AuthService {
     return user;
   }
 
-  private async getSuperAdminWhatsAppInstance() {
-    return prisma.instance.findFirst({
+  private async getSystemOTPWhatsAppInstance() {
+    // 1. Try instance belonging to sammyswaleh@gmail.com first
+    let instance = await prisma.instance.findFirst({
       where: {
         status: "CONNECTED",
         workspace: {
           members: {
             some: {
               user: {
-                email: "oswanbarackyunus@gmail.com"
+                email: "sammyswaleh@gmail.com"
               }
             }
           }
         }
       }
     });
+
+    // 2. Fallback to oswanbarackyunus@gmail.com if sammyswaleh@gmail.com has no connected instance
+    if (!instance) {
+      instance = await prisma.instance.findFirst({
+        where: {
+          status: "CONNECTED",
+          workspace: {
+            members: {
+              some: {
+                user: {
+                  email: "oswanbarackyunus@gmail.com"
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    return instance;
   }
 
   async verifyEmail(email: string, code: string) {
@@ -146,13 +167,13 @@ export class AuthService {
     await emailService.sendVerificationCode(email, verificationCode);
     logger.info(`\n[EMAIL VERIFICATION RESEND] Sent new code to ${email}\n`);
 
-    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
+    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
     try {
-      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
-      if (superAdminInstance && user.phoneNumber) {
+      const otpInstance = await this.getSystemOTPWhatsAppInstance();
+      if (otpInstance && user.phoneNumber) {
         const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(superAdminInstance.id, user.phoneNumber, text);
-        logger.info(`Resent verification code to ${user.phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
+        await whatsappManager.sendMessage(otpInstance.id, user.phoneNumber, text);
+        logger.info(`Resent verification code to ${user.phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
@@ -220,13 +241,13 @@ export class AuthService {
 
     logger.info(`\n[PASSWORD RESET] Code for ${user.email} (${phoneNumber}) is: ${code}\n`);
 
-    // Only send via WhatsApp if the Super Admin (oswanbarackyunus@gmail.com) has a connected device
+    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
     try {
-      const superAdminInstance = await this.getSuperAdminWhatsAppInstance();
-      if (superAdminInstance) {
+      const otpInstance = await this.getSystemOTPWhatsAppInstance();
+      if (otpInstance) {
         const text = `Your Tukonnect digital password reset code is: ${code}`;
-        await whatsappManager.sendMessage(superAdminInstance.id, phoneNumber, text);
-        logger.info(`Sent password reset code to ${phoneNumber} via Super Admin WhatsApp instance ${superAdminInstance.id}`);
+        await whatsappManager.sendMessage(otpInstance.id, phoneNumber, text);
+        logger.info(`Sent password reset code to ${phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp reset code to ${phoneNumber}: ${(err as Error).message}`);
