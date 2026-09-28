@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { RefreshCw, CheckCircle2, KeyRound, Smartphone } from "lucide-react";
+import { RefreshCw, CheckCircle2, KeyRound, Smartphone, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
 import PhoneInput from "../../components/PhoneInput";
@@ -18,6 +18,15 @@ export default function ForgotPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handleSendCode = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,8 +35,23 @@ export default function ForgotPasswordPage() {
     try {
       await forgotPassword(phoneNumber.trim());
       setStep("code");
+      setResendCooldown(60);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send code.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || isSubmitting) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await forgotPassword(phoneNumber.trim());
+      setResendCooldown(60);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,6 +185,25 @@ export default function ForgotPasswordPage() {
                   {isSubmitting ? <><RefreshCw size={16} className="animate-spin" /> Verifying...</> : "Verify Code"}
                 </button>
               </form>
+
+              <div className="mt-6 text-center text-xs space-y-3">
+                <p className="text-ink-400 dark:text-ink-500">
+                  Didn't get the code?{" "}
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={resendCooldown > 0 || isSubmitting}
+                    className="font-semibold text-accent-600 hover:underline dark:text-accent-400 disabled:opacity-50"
+                  >
+                    {resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
+                  </button>
+                </p>
+                <div>
+                  <Link to="/login" className="inline-flex items-center gap-1 font-medium text-ink-500 hover:text-ink-700 dark:text-ink-400 dark:hover:text-ink-200">
+                    <ArrowLeft size={12} /> Back to login
+                  </Link>
+                </div>
+              </div>
             </>
           )}
 

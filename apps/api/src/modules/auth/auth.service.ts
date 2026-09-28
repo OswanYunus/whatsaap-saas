@@ -8,6 +8,17 @@ import { emailService } from "../../services/email.service";
 
 const SALT_ROUNDS = 10;
 
+function normalizePhone(phone: string): string {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("254")) {
+    digits = digits.substring(3);
+  }
+  if (digits.startsWith("0")) {
+    digits = digits.substring(1);
+  }
+  return digits;
+}
+
 export class AuthService {
   async register(input: RegisterInput) {
     const existing = await prisma.user.findUnique({
@@ -214,8 +225,7 @@ export class AuthService {
   }
 
   async forgotPassword(phoneNumber: string) {
-    // Find user by phone number
-    const cleanPhone = phoneNumber.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(phoneNumber);
     const user = await prisma.user.findFirst({
       where: {
         phoneNumber: {
@@ -257,7 +267,7 @@ export class AuthService {
   }
 
   async verifyResetCode(phoneNumber: string, code: string) {
-    const cleanPhone = phoneNumber.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(phoneNumber);
     const user = await prisma.user.findFirst({
       where: {
         phoneNumber: { contains: cleanPhone }
@@ -265,18 +275,18 @@ export class AuthService {
     });
 
     if (!user || user.resetPasswordCode !== code) {
-      throw new AppError("Invalid code", 400, "INVALID_CODE");
+      throw new AppError("Invalid reset code. Please check your WhatsApp messages or request a new code.", 400, "INVALID_CODE");
     }
 
     if (user.resetPasswordCodeExpiresAt && user.resetPasswordCodeExpiresAt < new Date()) {
-      throw new AppError("Code has expired", 400, "EXPIRED_CODE");
+      throw new AppError("Reset code has expired. Please request a new code.", 400, "EXPIRED_CODE");
     }
 
     return { success: true };
   }
 
   async resetPassword(input: ResetPasswordInput) {
-    const cleanPhone = input.phoneNumber.replace(/\D/g, "");
+    const cleanPhone = normalizePhone(input.phoneNumber);
     const user = await prisma.user.findFirst({
       where: {
         phoneNumber: { contains: cleanPhone }

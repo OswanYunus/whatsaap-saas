@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function VerifyEmailPage() {
@@ -15,6 +15,15 @@ export default function VerifyEmailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // If no email param, redirect to register
   useEffect(() => {
@@ -44,12 +53,14 @@ export default function VerifyEmailPage() {
   };
 
   const handleResend = async () => {
+    if (resendCooldown > 0 || isResending) return;
     setError(null);
     setResendMessage(null);
     setIsResending(true);
     try {
       await resendVerification(email);
       setResendMessage("A new verification code has been sent!");
+      setResendCooldown(60);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
@@ -96,7 +107,7 @@ export default function VerifyEmailPage() {
                 <p className="text-sm text-ink-500 dark:text-ink-300">
                   We sent a 6-digit code to{" "}
                   <span className="font-medium text-ink-700 dark:text-ink-100">{email}</span>
-                  {" "}via WhatsApp / server logs.
+                  {" "}via WhatsApp / email.
                 </p>
               </div>
 
@@ -145,22 +156,26 @@ export default function VerifyEmailPage() {
                 </button>
               </form>
 
-              <div className="mt-6 text-center text-xs space-y-2">
+              <div className="mt-6 text-center text-xs space-y-3">
                 <p className="text-ink-400 dark:text-ink-500">
                   Didn't get a code?{" "}
                   <button
                     onClick={handleResend}
-                    disabled={isResending}
+                    disabled={isResending || resendCooldown > 0}
                     className="font-semibold text-accent-600 hover:underline dark:text-accent-400 disabled:opacity-50"
                   >
-                    {isResending ? "Resending..." : "Resend Code"}
+                    {isResending ? "Resending..." : resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
                   </button>
                 </p>
-                <p>
-                  <a href="/register" className="text-ink-400 hover:underline dark:text-ink-500">
+                <div className="flex items-center justify-center gap-4 text-ink-400 dark:text-ink-500">
+                  <Link to="/login" className="inline-flex items-center gap-1 hover:underline">
+                    <ArrowLeft size={12} /> Back to login
+                  </Link>
+                  <span>·</span>
+                  <Link to="/register" className="hover:underline">
                     Register again
-                  </a>
-                </p>
+                  </Link>
+                </div>
               </div>
             </>
           )}
