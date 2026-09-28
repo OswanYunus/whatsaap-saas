@@ -146,8 +146,8 @@ export default function MobileNav({ open, onClose }: Props) {
             <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
           </button>
 
-          {/* User row */}
-          <div className="flex items-center gap-3 rounded-xl p-2">
+          {/* User info */}
+          <div className="flex items-center gap-3 rounded-xl p-2 bg-ink-50/50 dark:bg-white/[0.03]">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-500/15 text-[12px] font-bold text-accent-700 dark:bg-accent-500/20 dark:text-accent-400">
               {initials}
             </div>
@@ -157,14 +157,17 @@ export default function MobileNav({ open, onClose }: Props) {
               </p>
               <p className="truncate text-[10px] text-ink-400 dark:text-ink-500">{user?.email ?? ""}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              title="Logout"
-              className="shrink-0 rounded-lg p-1.5 text-ink-400 hover:bg-red-50 hover:text-red-500 transition-colors dark:hover:bg-red-500/10 dark:hover:text-red-400"
-            >
-              <LogOut size={14} />
-            </button>
           </div>
+
+          {/* Dedicated mobile logout button */}
+          <button
+            onClick={handleLogout}
+            onTouchEnd={(e) => { e.preventDefault(); handleLogout(); }}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[13px] font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors"
+          >
+            <LogOut size={16} strokeWidth={2} />
+            <span>Sign out / Log out</span>
+          </button>
         </div>
       </div>
     </div>

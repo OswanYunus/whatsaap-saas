@@ -72,22 +72,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({ ...nextUser, name: me.name, phoneNumber: me.phoneNumber, isAdmin: me.isAdmin });
     setAccessToken(token);
     setWorkspaces(me.workspaces);
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    window.sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
   }, []);
 
   const clearSession = useCallback(() => {
     setUser(null);
     setAccessToken(null);
     setWorkspaces([]);
+    window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    window.localStorage.removeItem("waas-last-active");
   }, []);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+    // Read from sessionStorage (or legacy localStorage check for migration)
+    const stored = window.sessionStorage.getItem(TOKEN_STORAGE_KEY) || window.localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!stored) {
       setIsLoading(false);
       return;
     }
+
+    // Migration cleanup: remove from localStorage so closing tab strictly logs out
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
 
     apiFetch<MeResponse>("/api/users/me", { accessToken: stored })
       .then((me) => applySession({ id: me.id, email: me.email }, stored, me))
@@ -204,7 +210,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const logout = useCallback(() => clearSession(), [clearSession]);
+  const logout = useCallback(() => {
+    clearSession();
+    window.location.href = "/login";
+  }, [clearSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
