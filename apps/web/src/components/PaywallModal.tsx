@@ -10,10 +10,11 @@ interface PaywallModalProps {
   canClose?: boolean;
 }
 
+// TODO: revert to real prices after testing: { BASIC: 500, PREMIUM: 1000, PRO: 1500 }
 const PLAN_DISPLAY_PRICES = {
-  BASIC: 500,
-  PREMIUM: 1000,
-  PRO: 1500
+  BASIC: 1,
+  PREMIUM: 1,
+  PRO: 1
 } as const;
 
 const PLANS = [
