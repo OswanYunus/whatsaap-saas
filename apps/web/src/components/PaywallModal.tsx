@@ -10,11 +10,10 @@ interface PaywallModalProps {
   canClose?: boolean;
 }
 
-// TODO: revert to real prices after testing: { BASIC: 500, PREMIUM: 1000, PRO: 1500 }
 const PLAN_DISPLAY_PRICES = {
-  BASIC: 1,
-  PREMIUM: 1,
-  PRO: 1
+  BASIC: 500,
+  PREMIUM: 1000,
+  PRO: 1500
 } as const;
 
 const PLANS = [
@@ -261,12 +260,12 @@ export default function PaywallModal({ onClose, onSuccess, canClose = true }: Pa
                 disabled={!selected || loading}
                 className="btn-accent flex h-10 shrink-0 items-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay Ksh 1 (test)</>}
+                {loading ? <><RefreshCw size={14} className="animate-spin" />Processing...</> : <><CreditCard size={14} />Pay {selected ? `Ksh ${selected.price.toLocaleString()}` : ""}</>}
               </button>
             </div>
           )}
           <p className="mt-3 text-center text-[11px] text-white/56">
-            Test mode — you will be charged Ksh 1. Your package activates after M-Pesa confirms payment.
+            Your package activates only after confirmed M-Pesa payment.
           </p>
         </div>
       </div>

@@ -10,9 +10,9 @@ const checkoutSchema = z.object({
 });
 
 const PLAN_PRICES = {
-  BASIC: 1,
-  PREMIUM: 1,
-  PRO: 1
+  BASIC: 500,
+  PREMIUM: 1000,
+  PRO: 1500
 } as const;
 
 function normalizePhone(value: string) {
