@@ -55,24 +55,25 @@ async function getTumaToken(): Promise<string> {
     body: JSON.stringify({ email: config.email, api_key: config.apiKey })
   });
 
-  const data = await response.json() as {
-    success?: boolean;
-    token?: string;
-    expires_in?: number;
-    message?: string;
-  };
+  const data = await response.json() as Record<string, unknown>;
 
-  if (!response.ok || !data.success || !data.token) {
+  // Tuma may return token at root or nested inside data/token fields
+  const token =
+    (data.token as string | undefined) ||
+    ((data.data as Record<string, unknown> | undefined)?.token as string | undefined) ||
+    (data.access_token as string | undefined);
+
+  if (!token) {
     throw new AppError(
-      data.message || "Could not authenticate with payment provider.",
+      (data.message as string) || "Could not authenticate with payment provider.",
       502,
       "TUMA_AUTH_FAILED"
     );
   }
 
-  const expiresIn = (data.expires_in ?? 86400) * 1000;
-  tumaTokenCache = { token: data.token, expiresAt: now + expiresIn };
-  return data.token;
+  const expiresIn = ((data.expires_in as number | undefined) ?? 86400) * 1000;
+  tumaTokenCache = { token, expiresAt: now + expiresIn };
+  return token;
 }
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
