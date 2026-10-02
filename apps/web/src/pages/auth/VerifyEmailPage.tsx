@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import SpookyCanvas from "../../components/spooky/SpookyCanvas";
 
 export default function VerifyEmailPage() {
   const { verifyEmail, resendVerification } = useAuth();
@@ -25,7 +26,6 @@ export default function VerifyEmailPage() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // If no email param, redirect to register
   useEffect(() => {
     if (!email) navigate("/register", { replace: true });
   }, [email, navigate]);
@@ -42,7 +42,6 @@ export default function VerifyEmailPage() {
     try {
       await verifyEmail(email, code.trim());
       setVerified(true);
-      // Auto-redirect after short delay
       setTimeout(() => navigate("/", { replace: true }), 1500);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid code. Please try again.";
@@ -68,7 +67,6 @@ export default function VerifyEmailPage() {
     }
   };
 
-  // Auto-verify when code reaches 6 digits
   useEffect(() => {
     if (code.length === 6 && !verified && !isSubmitting) {
       handleVerify();
@@ -76,56 +74,58 @@ export default function VerifyEmailPage() {
   }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 dark:bg-canvas-dark">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
+    <div className="relative flex min-h-screen items-center justify-center bg-canvas px-4 py-12 dark:bg-canvas-dark overflow-hidden">
+      <SpookyCanvas />
+
+      <div className="relative z-10 w-full max-w-sm">
+        <div className="mb-6 text-center">
           <h1
-            style={{ fontFamily: "'DM Serif Display', serif" }}
-            className="text-4xl text-ink-900 dark:text-white tracking-tight"
+            style={{ letterSpacing: "-0.03em" }}
+            className="text-3xl font-extrabold text-ink-900 dark:text-white"
           >
             Tukonnect
           </h1>
-          <p className="mt-1 text-sm text-ink-400 dark:text-ink-500 tracking-widest uppercase font-medium">
-            Digital
+          <p className="mt-1 text-xs text-ink-400 dark:text-ink-500 tracking-wider uppercase font-medium">
+            Account Verification
           </p>
         </div>
 
-        <div className="card p-8">
+        <div className="rounded-2xl border border-ink-100 bg-surface/95 p-7 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#0d0d12]/90 dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
           {verified ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <CheckCircle2 size={48} className="text-green-500" />
-              <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Email Verified!</h1>
-              <p className="text-sm text-ink-500 dark:text-ink-300">Redirecting to your dashboard...</p>
+              <CheckCircle2 size={44} className="text-orange-500" />
+              <h2 className="text-base font-bold text-ink-800 dark:text-white">Email Verified!</h2>
+              <p className="text-xs text-ink-500 dark:text-ink-300">Redirecting to your dashboard...</p>
             </div>
           ) : (
             <>
-              <div className="flex flex-col items-center gap-3 pb-4 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-500/10">
-                  <ShieldCheck size={24} className="text-accent-600 dark:text-accent-400" />
+              <div className="flex flex-col items-center gap-2 pb-4 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
+                  <ShieldCheck size={20} />
                 </div>
-                <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Verify your account</h1>
-                <p className="text-sm text-ink-500 dark:text-ink-300">
+                <h2 className="text-base font-bold text-ink-800 dark:text-white">Verify your account</h2>
+                <p className="text-xs text-ink-500 dark:text-ink-300">
                   We sent a 6-digit code to{" "}
-                  <span className="font-medium text-ink-700 dark:text-ink-100">{email}</span>
-                  {" "}via WhatsApp / email.
+                  <span className="font-semibold text-ink-700 dark:text-ink-100">{email}</span>
+                  {" "}via WhatsApp & email.
                 </p>
               </div>
 
               <form className="space-y-4" onSubmit={handleVerify}>
                 {error && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
                     {error}
                   </div>
                 )}
 
                 {resendMessage && (
-                  <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
+                  <div className="rounded-xl border border-green-200 bg-green-50 px-3.5 py-2.5 text-xs text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
                     {resendMessage}
                   </div>
                 )}
 
                 <div>
-                  <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Verification Code</label>
+                  <label className="text-xs font-semibold text-ink-700 dark:text-ink-200">Verification Code</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -134,7 +134,7 @@ export default function VerifyEmailPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="123456"
-                    className="input mt-1.5 text-center text-xl tracking-[0.5em] font-mono"
+                    className="input mt-1 text-center text-lg tracking-[0.4em] font-mono py-2"
                     autoFocus
                     required
                   />
@@ -143,11 +143,11 @@ export default function VerifyEmailPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || code.length !== 6}
-                  className="btn-primary w-full flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-2.5 text-xs shadow-md shadow-orange-500/20 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
-                      <RefreshCw size={16} className="animate-spin" />
+                      <RefreshCw size={14} className="animate-spin" />
                       Verifying...
                     </>
                   ) : (
@@ -156,13 +156,13 @@ export default function VerifyEmailPage() {
                 </button>
               </form>
 
-              <div className="mt-6 text-center text-xs space-y-3">
+              <div className="mt-5 text-center text-xs space-y-2.5">
                 <p className="text-ink-400 dark:text-ink-500">
-                  Didn't get a code?{" "}
+                  Didn&apos;t get a code?{" "}
                   <button
                     onClick={handleResend}
                     disabled={isResending || resendCooldown > 0}
-                    className="font-semibold text-accent-600 hover:underline dark:text-accent-400 disabled:opacity-50"
+                    className="font-semibold text-orange-500 hover:text-orange-400 hover:underline disabled:opacity-50 cursor-pointer"
                   >
                     {isResending ? "Resending..." : resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
                   </button>

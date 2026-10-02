@@ -39,22 +39,22 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen bg-canvas dark:bg-canvas-dark overflow-hidden">
-      {/* Spooky 60fps Ambient Particles */}
+      {/* Ambient 60fps Spooky Canvas */}
       <SpookyCanvas />
 
       {/* Left decorative panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden bg-ink-900 dark:bg-ink-900">
-        {/* Background gradient with eerie purple/orange touch */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950/40 to-slate-950" />
-        {/* Orange glow orb */}
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-orange-500/20 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-purple-500/20 blur-[100px]" />
+      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden bg-[#07070a] dark:bg-[#07070a] border-r border-white/5">
+        {/* Background gradient with subtle moonlight / ember illumination */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#07070a] via-[#0e0a17] to-[#07070a]" />
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-orange-500/10 blur-[140px]" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-purple-600/10 blur-[130px]" />
+        
         {/* Grid pattern overlay */}
         <div
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `linear-gradient(rgb(255 255 255) 1px, transparent 1px), linear-gradient(to right, rgb(255 255 255) 1px, transparent 1px)`,
-            backgroundSize: "40px 40px"
+            backgroundSize: "48px 48px"
           }}
         />
 
@@ -62,14 +62,14 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/30">
-              <span className="text-lg">🎃</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/20">
+              <MessageCircle size={20} strokeWidth={2.5} className="text-white" />
             </div>
             <div>
-              <p className="text-[15px] font-bold text-white flex items-center gap-1.5" style={{ letterSpacing: "-0.02em" }}>
+              <p className="text-[15px] font-bold text-white flex items-center gap-2" style={{ letterSpacing: "-0.02em" }}>
                 Tukonnect
-                <span className="rounded-full border border-orange-400/40 bg-orange-500/20 px-2 py-0.5 text-[9px] font-semibold text-orange-300">
-                  Spooky Edition 🦇
+                <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-orange-400">
+                  Spooky Edition
                 </span>
               </p>
               <p className="text-[10px] font-medium tracking-widest text-white/40 uppercase">Digital SaaS</p>
@@ -78,16 +78,16 @@ export default function LoginPage() {
 
           {/* Hero copy */}
           <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3.5 py-1 text-xs font-semibold text-orange-300">
-              <Sparkles size={13} className="animate-spin text-orange-400" />
-              Spooky Season Supercharged Broadcasts
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/25 bg-orange-500/10 px-3.5 py-1 text-xs font-semibold text-orange-300">
+              <Sparkles size={13} className="text-orange-400" />
+              High-Velocity WhatsApp Infrastructure
             </div>
             <h1
               className="text-4xl xl:text-5xl font-bold text-white leading-[1.1]"
               style={{ letterSpacing: "-0.03em" }}
             >
               Automate your<br />
-              <span className="text-orange-400 drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]">WhatsApp</span><br />
+              <span className="text-orange-400">WhatsApp</span><br />
               marketing.
             </h1>
             <p className="mt-5 text-base text-white/60 leading-relaxed max-w-sm">
@@ -98,7 +98,7 @@ export default function LoginPage() {
             <ul className="mt-10 space-y-3.5">
               {features.map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-orange-500/15 border border-orange-500/20">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
                     <Icon size={14} className="text-orange-400" strokeWidth={2} />
                   </div>
                   <span className="text-sm text-white/70">{text}</span>
@@ -108,14 +108,14 @@ export default function LoginPage() {
 
             <Link
               to="/developer-docs"
-              className="mt-8 inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/85 transition hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
+              className="mt-8 inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/85 transition hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
             >
               View Developer API docs →
             </Link>
           </div>
 
           {/* Footer */}
-          <p className="text-xs text-white/30">© {new Date().getFullYear()} Tukonnect Digital • Spooky Season Edition</p>
+          <p className="text-xs text-white/30">© {new Date().getFullYear()} Tukonnect Digital • Secure & Private</p>
         </div>
       </div>
 
@@ -124,20 +124,19 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="mb-8 flex flex-col items-center lg:hidden">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/30 mb-3">
-            <span className="text-2xl">🎃</span>
+            <MessageCircle size={22} strokeWidth={2.5} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-ink-900 dark:text-white flex items-center gap-1.5" style={{ letterSpacing: "-0.025em" }}>
             Tukonnect Digital
-            <span className="text-sm">🦇</span>
           </h1>
         </div>
 
-        <div className="w-full max-w-[400px] rounded-3xl border border-ink-100 bg-surface/90 p-8 shadow-2xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-surface-dark/90 dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+        <div className="w-full max-w-[400px] rounded-2xl border border-ink-100 bg-surface/95 p-8 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#0d0d12]/90 dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-ink-900 dark:text-white" style={{ letterSpacing: "-0.025em" }}>
               Welcome back
             </h2>
-            <p className="mt-1.5 text-sm text-ink-400 dark:text-ink-500">
+            <p className="mt-1.5 text-sm text-ink-400 dark:text-ink-400">
               Sign in to your account to continue.
             </p>
           </div>
@@ -150,7 +149,7 @@ export default function LoginPage() {
                   <div className="mt-2 pt-2 border-t border-red-200/50 dark:border-red-500/20">
                     <Link
                       to={`/verify-email?email=${encodeURIComponent(email)}`}
-                      className="font-semibold text-orange-600 hover:underline dark:text-orange-400"
+                      className="font-semibold text-orange-500 hover:underline"
                     >
                       Click here to verify your account →
                     </Link>
@@ -183,26 +182,26 @@ export default function LoginPage() {
               <div className="mt-2 flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-orange-600 hover:text-orange-700 hover:underline dark:text-orange-400"
+                  className="text-xs font-medium text-orange-500 hover:text-orange-400 hover:underline"
                 >
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <ShimmerButton type="submit" loading={isSubmitting} className="w-full mt-2 py-3 !bg-orange-600 hover:!bg-orange-500">
-              Sign in 🎃
+            <ShimmerButton type="submit" loading={isSubmitting} className="w-full mt-2 py-3 !bg-orange-500 hover:!bg-orange-600">
+              Sign in
             </ShimmerButton>
           </form>
 
-          <p className="mt-6 text-center text-sm text-ink-400 dark:text-ink-500">
-            Don't have an account?{" "}
-            <Link to="/register" className="font-semibold text-orange-600 hover:underline dark:text-orange-400">
+          <p className="mt-6 text-center text-sm text-ink-400 dark:text-ink-400">
+            Don&apos;t have an account?{" "}
+            <Link to="/register" className="font-semibold text-orange-500 hover:text-orange-400 hover:underline">
               Create one
             </Link>
           </p>
           <p className="mt-3 text-center text-sm">
-            <Link to="/developer-docs" className="font-semibold text-ink-500 hover:text-ink-800 hover:underline dark:text-ink-400 dark:hover:text-ink-200">
+            <Link to="/developer-docs" className="font-semibold text-ink-400 hover:text-ink-200 hover:underline">
               View Developer API documentation
             </Link>
           </p>

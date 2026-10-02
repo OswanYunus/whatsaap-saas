@@ -1,19 +1,28 @@
 import { useEffect, useRef } from "react";
 import { playBatFlutter } from "./SpookyAudio";
 
-interface Particle {
+interface Bat {
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
+  wingPhase: number;
+  wingSpeed: number;
   alpha: number;
-  type: "ember" | "wisp" | "ghost" | "bat";
-  color: string;
-  angle: number;
-  spin: number;
   life?: number;
   maxLife?: number;
+}
+
+interface Ember {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  alpha: number;
+  color: string;
+  pulsePhase: number;
 }
 
 export default function SpookyCanvas() {
@@ -29,38 +38,53 @@ export default function SpookyCanvas() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    const particles: Particle[] = [];
-    const MAX_PARTICLES = 28;
+    const bats: Bat[] = [];
+    const embers: Ember[] = [];
 
-    const colors = [
-      "rgba(255, 120, 40, ",   // Pumpkin orange
-      "rgba(168, 85, 247, ",   // Mystic purple
-      "rgba(34, 197, 94, ",    // Ectoplasm green
-      "rgba(244, 63, 94, ",    // Blood rose
+    const MAX_BATS = 8;
+    const MAX_EMBERS = 22;
+
+    const emberColors = [
+      "249, 115, 22", // Pumpkin orange
+      "168, 85, 247", // Violet
+      "234, 88, 12",  // Deep amber
+      "59, 130, 246", // Spectral cyan
     ];
 
-    function createParticle(type?: "ember" | "wisp" | "ghost" | "bat", x?: number, y?: number): Particle {
-      const selectedType = type || (Math.random() > 0.65 ? (Math.random() > 0.5 ? "bat" : "ghost") : Math.random() > 0.5 ? "ember" : "wisp");
-      const baseColor = colors[Math.floor(Math.random() * colors.length)];
+    function createBat(x?: number, y?: number): Bat {
+      const startX = x ?? (Math.random() > 0.5 ? -30 : width + 30);
+      const startY = y ?? (Math.random() * (height * 0.45));
+      const targetDir = startX < width / 2 ? 1 : -1;
+
       return {
-        x: x ?? Math.random() * width,
-        y: y ?? Math.random() * height,
-        vx: (Math.random() - 0.5) * (selectedType === "bat" ? 2.5 : 0.8),
-        vy: selectedType === "ember" ? -(0.5 + Math.random() * 0.8) : (Math.random() - 0.5) * 0.7,
-        size: selectedType === "ghost" ? 14 + Math.random() * 10 : selectedType === "bat" ? 10 + Math.random() * 8 : 2 + Math.random() * 4,
-        alpha: 0.15 + Math.random() * 0.45,
-        type: selectedType,
-        color: baseColor,
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.03,
+        x: startX,
+        y: startY,
+        vx: (1.2 + Math.random() * 1.8) * targetDir,
+        vy: (Math.random() - 0.5) * 0.8,
+        size: 7 + Math.random() * 6,
+        wingPhase: Math.random() * Math.PI * 2,
+        wingSpeed: 0.15 + Math.random() * 0.1,
+        alpha: 0.25 + Math.random() * 0.45,
       };
     }
 
-    for (let i = 0; i < MAX_PARTICLES; i++) {
-      particles.push(createParticle());
+    function createEmber(): Ember {
+      const color = emberColors[Math.floor(Math.random() * emberColors.length)];
+      return {
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: -(0.3 + Math.random() * 0.6),
+        radius: 1 + Math.random() * 2.2,
+        alpha: 0.1 + Math.random() * 0.4,
+        color,
+        pulsePhase: Math.random() * Math.PI * 2,
+      };
     }
 
-    // Interactive mouse position
+    for (let i = 0; i < MAX_BATS; i++) bats.push(createBat());
+    for (let i = 0; i < MAX_EMBERS; i++) embers.push(createEmber());
+
     let mouseX = -1000;
     let mouseY = -1000;
 
@@ -69,22 +93,27 @@ export default function SpookyCanvas() {
       mouseY = e.clientY;
     };
 
-    // Global event for Bat Burst (e.g., clicking the pumpkin header or pet)
     const handleBatBurst = (e: Event) => {
       const custom = e as CustomEvent<{ x?: number; y?: number }>;
       const startX = custom.detail?.x ?? width / 2;
       const startY = custom.detail?.y ?? height / 2;
       playBatFlutter();
 
-      for (let i = 0; i < 14; i++) {
-        const p = createParticle("bat", startX, startY);
+      for (let i = 0; i < 12; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 3 + Math.random() * 5;
-        p.vx = Math.cos(angle) * speed;
-        p.vy = Math.sin(angle) * speed - 1.5;
-        p.life = 0;
-        p.maxLife = 120 + Math.random() * 60;
-        particles.push(p);
+        const speed = 2.5 + Math.random() * 4;
+        bats.push({
+          x: startX,
+          y: startY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.2,
+          size: 6 + Math.random() * 5,
+          wingPhase: Math.random() * Math.PI * 2,
+          wingSpeed: 0.2 + Math.random() * 0.15,
+          alpha: 0.7,
+          life: 0,
+          maxLife: 90 + Math.random() * 50,
+        });
       }
     };
 
@@ -97,72 +126,55 @@ export default function SpookyCanvas() {
     };
     window.addEventListener("resize", handleResize);
 
-    // Draw helpers
-    function drawBat(p: Particle) {
+    // Realistic elegant bat silhouette drawing with flapping bezier wings
+    function drawBat(b: Bat) {
       if (!ctx) return;
       ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.angle);
-      ctx.fillStyle = `rgba(30, 20, 45, ${p.alpha * 0.9})`;
-      ctx.shadowColor = p.color + "0.6)";
+      ctx.translate(b.x, b.y);
+
+      // Facing direction
+      const dir = b.vx >= 0 ? 1 : -1;
+      ctx.scale(dir, 1);
+
+      const wingY = Math.sin(b.wingPhase) * (b.size * 0.8);
+      const s = b.size;
+
+      ctx.fillStyle = `rgba(18, 14, 28, ${b.alpha})`;
+      ctx.shadowColor = `rgba(249, 115, 22, ${b.alpha * 0.5})`;
+      ctx.shadowBlur = 6;
+
+      ctx.beginPath();
+      // Body
+      ctx.ellipse(0, 0, s * 0.3, s * 0.6, 0, 0, Math.PI * 2);
+
+      // Left wing
+      ctx.moveTo(-s * 0.2, 0);
+      ctx.quadraticCurveTo(-s * 1.1, wingY - s * 0.4, -s * 2.2, wingY);
+      ctx.quadraticCurveTo(-s * 1.4, wingY + s * 0.8, -s * 0.2, s * 0.4);
+
+      // Right wing
+      ctx.moveTo(s * 0.2, 0);
+      ctx.quadraticCurveTo(s * 1.1, wingY - s * 0.4, s * 2.2, wingY);
+      ctx.quadraticCurveTo(s * 1.4, wingY + s * 0.8, s * 0.2, s * 0.4);
+
+      ctx.fill();
+
+      // Small subtle glowing eyes
+      ctx.fillStyle = `rgba(255, 120, 40, ${b.alpha * 0.9})`;
+      ctx.fillRect(s * 0.08, -s * 0.35, 1.5, 1.5);
+
+      ctx.restore();
+    }
+
+    function drawEmber(e: Ember) {
+      if (!ctx) return;
+      ctx.save();
+      const currentAlpha = e.alpha * (0.7 + 0.3 * Math.sin(e.pulsePhase));
+      ctx.fillStyle = `rgba(${e.color}, ${currentAlpha})`;
+      ctx.shadowColor = `rgba(${e.color}, 0.8)`;
       ctx.shadowBlur = 8;
-
-      const s = p.size;
       ctx.beginPath();
-      // Bat wing curves
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(s * 0.7, -s * 0.8, s, -s * 0.2);
-      ctx.quadraticCurveTo(s * 0.6, s * 0.3, 0, s * 0.4);
-      ctx.quadraticCurveTo(-s * 0.6, s * 0.3, -s, -s * 0.2);
-      ctx.quadraticCurveTo(-s * 0.7, -s * 0.8, 0, 0);
-      ctx.fill();
-
-      // Tiny bat ears
-      ctx.beginPath();
-      ctx.moveTo(-2, -s * 0.15);
-      ctx.lineTo(0, -s * 0.45);
-      ctx.lineTo(2, -s * 0.15);
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawGhost(p: Particle) {
-      if (!ctx) return;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.fillStyle = `rgba(240, 245, 255, ${p.alpha * 0.65})`;
-      ctx.shadowColor = "rgba(168, 85, 247, 0.4)";
-      ctx.shadowBlur = 12;
-
-      const s = p.size;
-      // Ghost rounded head and wavy skirt
-      ctx.beginPath();
-      ctx.arc(0, -s * 0.3, s * 0.45, Math.PI, 0, false);
-      ctx.lineTo(s * 0.45, s * 0.5);
-      ctx.quadraticCurveTo(s * 0.2, s * 0.3, 0, s * 0.5);
-      ctx.quadraticCurveTo(-s * 0.2, s * 0.3, -s * 0.45, s * 0.5);
-      ctx.closePath();
-      ctx.fill();
-
-      // Spooky black eyes
-      ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-      ctx.beginPath();
-      ctx.arc(-s * 0.15, -s * 0.3, s * 0.08, 0, Math.PI * 2);
-      ctx.arc(s * 0.15, -s * 0.3, s * 0.08, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    function drawEmber(p: Particle) {
-      if (!ctx) return;
-      ctx.save();
-      ctx.fillStyle = p.color + `${p.alpha})`;
-      ctx.shadowColor = p.color + "0.8)";
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -186,60 +198,61 @@ export default function SpookyCanvas() {
 
       ctx!.clearRect(0, 0, width, height);
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
+      // Render Embers
+      for (let i = 0; i < embers.length; i++) {
+        const e = embers[i];
+        e.x += e.vx * 60 * dt;
+        e.y += e.vy * 60 * dt;
+        e.pulsePhase += 0.04;
 
-        // Gentle cursor push/interaction
-        const dx = p.x - mouseX;
-        const dy = p.y - mouseY;
+        if (e.y < -10) {
+          e.y = height + 10;
+          e.x = Math.random() * width;
+        }
+        if (e.x < -10) e.x = width + 10;
+        if (e.x > width + 10) e.x = -10;
+
+        drawEmber(e);
+      }
+
+      // Render Bats
+      for (let i = bats.length - 1; i >= 0; i--) {
+        const b = bats[i];
+
+        // Cursor avoidance
+        const dx = b.x - mouseX;
+        const dy = b.y - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120 && dist > 0) {
-          const force = (1 - dist / 120) * 1.5;
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
+        if (dist < 140 && dist > 0) {
+          const force = (1 - dist / 140) * 2.0;
+          b.vx += (dx / dist) * force;
+          b.vy += (dy / dist) * force;
         }
 
-        p.x += p.vx * 60 * dt;
-        p.y += p.vy * 60 * dt;
-        p.angle += p.spin;
+        b.x += b.vx * 60 * dt;
+        b.y += b.vy * 60 * dt + Math.sin(b.wingPhase * 0.5) * 0.4;
+        b.wingPhase += b.wingSpeed;
 
-        // Apply friction
-        p.vx *= 0.985;
-        if (p.type === "ember") {
-          p.vy = p.vy * 0.98 - 0.02;
-        } else {
-          p.vy *= 0.985;
-        }
-
-        // Temporary burst particles life check
-        if (p.life !== undefined && p.maxLife !== undefined) {
-          p.life++;
-          p.alpha = Math.max(0, 0.7 * (1 - p.life / p.maxLife));
-          if (p.life >= p.maxLife) {
-            particles.splice(i, 1);
+        if (b.life !== undefined && b.maxLife !== undefined) {
+          b.life++;
+          b.alpha = Math.max(0, 0.75 * (1 - b.life / b.maxLife));
+          if (b.life >= b.maxLife) {
+            bats.splice(i, 1);
             continue;
           }
         }
 
         // Screen wrap
-        if (p.x < -30) p.x = width + 20;
-        if (p.x > width + 30) p.x = -20;
-        if (p.y < -30) p.y = height + 20;
-        if (p.y > height + 30) p.y = -20;
+        if (b.x < -60) b.x = width + 50;
+        if (b.x > width + 60) b.x = -50;
+        if (b.y < -50) b.y = height * 0.5;
+        if (b.y > height + 50) b.y = -30;
 
-        // Render based on type
-        if (p.type === "bat") {
-          drawBat(p);
-        } else if (p.type === "ghost") {
-          drawGhost(p);
-        } else {
-          drawEmber(p);
-        }
+        drawBat(b);
       }
 
-      // Maintain baseline particle count
-      while (particles.length < MAX_PARTICLES) {
-        particles.push(createParticle());
+      while (bats.length < MAX_BATS) {
+        bats.push(createBat());
       }
 
       animId = requestAnimationFrame(render);
@@ -260,7 +273,7 @@ export default function SpookyCanvas() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 opacity-80 transition-opacity duration-500"
+      className="pointer-events-none fixed inset-0 z-0 opacity-75"
     />
   );
 }

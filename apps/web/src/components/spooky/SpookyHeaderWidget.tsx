@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Volume2, VolumeX, Flame } from "lucide-react";
+import { Volume2, VolumeX, Sparkles } from "lucide-react";
 import {
   isSpookySoundEnabled,
   setSpookySoundEnabled,
@@ -33,38 +33,35 @@ export default function SpookyHeaderWidget() {
   };
 
   return (
-    <div className="flex items-center gap-1.5">
-      {/* Bat Swarm / Spooky Season Burst Button */}
+    <div className="flex items-center gap-2">
+      {/* Sleek Gothic Season Badge & Trigger */}
       <button
         onClick={triggerBatBurst}
-        title="Spooky Season is here! Click for bat burst 🦇"
-        className="group relative flex items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 px-2.5 py-1.5 text-xs font-semibold text-orange-400 transition-all duration-200 hover:border-orange-500/60 hover:bg-orange-500/20 hover:text-orange-300 hover:shadow-md hover:shadow-orange-500/20 active:scale-95 dark:border-orange-400/25 dark:bg-orange-400/10"
+        title="Spooky Season Edition • Click for ambient bat flight"
+        className="group relative flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/[0.06] hover:bg-orange-500/[0.12] hover:border-orange-500/40 px-3 py-1.5 text-xs font-semibold text-orange-400 transition-all duration-200 active:scale-95 cursor-pointer"
       >
-        <Flame size={13} className="text-orange-400 animate-pulse" />
-        <span className="hidden md:inline font-mono tracking-tight text-[11px]">
-          SPOOKY MODE
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
         </span>
-        <span className="text-sm transition-transform group-hover:rotate-12 group-hover:scale-125">
-          🎃
+        <span className="hidden sm:inline font-mono tracking-wider text-[11px] uppercase text-orange-300">
+          Spooky Season
         </span>
+        <Sparkles size={12} className="text-orange-400 opacity-70 group-hover:opacity-100 transition-opacity" />
       </button>
 
-      {/* Spooky Sound Effects Toggle */}
+      {/* Ambient Sound Toggle */}
       <button
         onClick={toggleSound}
-        title={soundOn ? "Mute spooky audio" : "Enable eerie sound effects"}
-        aria-label="Toggle spooky sounds"
-        className={`btn-ghost h-9 w-9 p-0 rounded-xl transition-colors ${
+        title={soundOn ? "Mute ambient audio" : "Enable atmospheric sound effects"}
+        aria-label="Toggle ambient sounds"
+        className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
           soundOn
-            ? "text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
-            : "text-ink-400 hover:text-ink-600 dark:hover:text-ink-200"
+            ? "border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
+            : "border-white/10 bg-white/[0.03] text-ink-400 hover:text-ink-200 hover:bg-white/[0.06]"
         }`}
       >
-        {soundOn ? (
-          <Volume2 size={16} className="animate-pulse" />
-        ) : (
-          <VolumeX size={16} />
-        )}
+        {soundOn ? <Volume2 size={15} className="text-orange-400" /> : <VolumeX size={15} />}
       </button>
     </div>
   );
