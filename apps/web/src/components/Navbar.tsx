@@ -3,6 +3,7 @@ import { Moon, Sun, Menu } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import MobileNav from "./MobileNav";
+import SpookyHeaderWidget from "./spooky/SpookyHeaderWidget";
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
@@ -25,10 +26,8 @@ export default function Navbar() {
 
           {/* Mobile: logo name */}
           <div className="flex items-center gap-2 sm:hidden">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-500">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500 shadow-sm shadow-orange-500/30">
+              <span className="text-[12px]">🎃</span>
             </div>
             <span className="text-[13px] font-bold text-ink-900 dark:text-white" style={{ letterSpacing: "-0.02em" }}>
               Tukonnect
@@ -36,20 +35,22 @@ export default function Navbar() {
           </div>
 
           {/* Desktop: workspace badge */}
-          <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-ink-100 bg-ink-50/60 px-3 py-1.5 dark:border-white/[0.07] dark:bg-white/[0.04]">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-500" />
+          <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-1.5 dark:border-orange-400/20 dark:bg-orange-400/5">
+            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
             <span className="text-[13px] font-semibold text-ink-700 dark:text-ink-200" style={{ letterSpacing: "-0.01em" }}>
               {workspaceName}
             </span>
           </div>
         </div>
 
-        {/* Right: theme toggle */}
-        <div className="flex items-center gap-1">
+        {/* Right: Spooky header widget + theme toggle */}
+        <div className="flex items-center gap-2">
+          <SpookyHeaderWidget />
+
           <button
             aria-label="Toggle dark mode"
             onClick={toggleTheme}
-            className="btn-ghost h-9 w-9 p-0"
+            className="btn-ghost h-9 w-9 p-0 rounded-xl"
           >
             {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
           </button>

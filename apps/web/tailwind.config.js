@@ -75,7 +75,10 @@ export default {
         "slide-in-left":  "slideInLeft 0.25s ease-out",
         shimmer:          "shimmer 2s ease-in-out infinite",
         "count-up":       "countUp 0.6s ease-out",
-        "pulse-glow":     "pulseGlow 2s ease-in-out infinite"
+        "pulse-glow":     "pulseGlow 2s ease-in-out infinite",
+        float:            "spookyFloat 3.5s ease-in-out infinite",
+        wiggle:           "spookyWiggle 0.6s ease-in-out infinite",
+        "pumpkin-glow":   "pumpkinGlow 2.5s ease-in-out infinite"
       },
       keyframes: {
         fadeIn: {
@@ -109,6 +112,18 @@ export default {
         pulseGlow: {
           "0%, 100%": { boxShadow: "0 0 0 0 rgb(34 197 94 / 0)" },
           "50%":      { boxShadow: "0 0 0 6px rgb(34 197 94 / 0.12)" }
+        },
+        spookyFloat: {
+          "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
+          "50%":      { transform: "translateY(-8px) rotate(3deg)" }
+        },
+        spookyWiggle: {
+          "0%, 100%": { transform: "rotate(-6deg) scale(1.05)" },
+          "50%":      { transform: "rotate(6deg) scale(1.05)" }
+        },
+        pumpkinGlow: {
+          "0%, 100%": { boxShadow: "0 0 15px -3px rgba(249, 115, 22, 0.4)" },
+          "50%":      { boxShadow: "0 0 25px 2px rgba(168, 85, 247, 0.6)" }
         }
       }
     }

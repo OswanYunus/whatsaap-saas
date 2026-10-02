@@ -336,6 +336,23 @@
     line-height: 0.875rem;
   }
 
+  /* ─── Spooky Season Special Styles ─── */
+  .spooky-card {
+    @apply transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_4px_24px_-4px_rgba(249,115,22,0.18)] dark:hover:border-orange-500/35 dark:hover:shadow-[0_8px_32px_-4px_rgba(249,115,22,0.25)];
+  }
+
+  .spooky-glow-orange {
+    text-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+  }
+
+  .spooky-glow-purple {
+    text-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+  }
+
+  .spooky-border-glow {
+    box-shadow: 0 0 15px -3px rgba(249, 115, 22, 0.35), inset 0 0 15px -3px rgba(168, 85, 247, 0.15);
+  }
+
   /* ─── Scrollbar ─── */
   ::-webkit-scrollbar {
     width: 6px;
@@ -348,6 +365,6 @@
     @apply rounded-full bg-ink-200 dark:bg-white/10;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-ink-300 dark:bg-white/20;
+    @apply bg-orange-500/40 dark:bg-orange-500/50;
   }
 }
