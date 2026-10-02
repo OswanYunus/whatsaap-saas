@@ -3,15 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
 import ShimmerButton from "../../components/ui/ShimmerButton";
-import SpookyCanvas from "../../components/spooky/SpookyCanvas";
-import { MessageCircle, Zap, Shield, BarChart3, Sparkles } from "lucide-react";
-
-const features = [
-  { icon: Zap, text: "Bulk WhatsApp campaigns" },
-  { icon: MessageCircle, text: "Multi-device management" },
-  { icon: BarChart3, text: "Real-time analytics" },
-  { icon: Shield, text: "Secure & compliant" },
-];
+import HalloweenAuthLayout from "../../components/halloween/HalloweenScene";
+import { Flame, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -38,118 +31,47 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-canvas dark:bg-canvas-dark overflow-hidden">
-      {/* Ambient 60fps Spooky Canvas */}
-      <SpookyCanvas />
-
-      {/* Left decorative panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[52%] xl:w-[55%] relative flex-col overflow-hidden bg-[#07070a] dark:bg-[#07070a] border-r border-white/5">
-        {/* Background gradient with subtle moonlight / ember illumination */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#07070a] via-[#0e0a17] to-[#07070a]" />
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-orange-500/10 blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-purple-600/10 blur-[130px]" />
-        
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgb(255 255 255) 1px, transparent 1px), linear-gradient(to right, rgb(255 255 255) 1px, transparent 1px)`,
-            backgroundSize: "48px 48px"
-          }}
-        />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/20">
-              <MessageCircle size={20} strokeWidth={2.5} className="text-white" />
-            </div>
-            <div>
-              <p className="text-[15px] font-bold text-white flex items-center gap-2" style={{ letterSpacing: "-0.02em" }}>
-                Tukonnect
-                <span className="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-orange-400">
-                  Spooky Edition
-                </span>
-              </p>
-              <p className="text-[10px] font-medium tracking-widest text-white/40 uppercase">Digital SaaS</p>
-            </div>
+    <HalloweenAuthLayout>
+      <div className="w-full max-w-[420px]">
+        {/* Brand Header with Glowing Emblem */}
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-[#0f0b18]/80 px-3.5 py-1 text-xs font-semibold text-orange-400 shadow-lg shadow-black/50 backdrop-blur-md mb-3">
+            <Flame size={13} className="text-orange-400 fill-orange-400/30" />
+            <span className="font-mono text-[11px] tracking-wider uppercase text-orange-300">
+              Spooky Season Edition
+            </span>
           </div>
-
-          {/* Hero copy */}
-          <div>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-500/25 bg-orange-500/10 px-3.5 py-1 text-xs font-semibold text-orange-300">
-              <Sparkles size={13} className="text-orange-400" />
-              High-Velocity WhatsApp Infrastructure
-            </div>
-            <h1
-              className="text-4xl xl:text-5xl font-bold text-white leading-[1.1]"
-              style={{ letterSpacing: "-0.03em" }}
-            >
-              Automate your<br />
-              <span className="text-orange-400">WhatsApp</span><br />
-              marketing.
-            </h1>
-            <p className="mt-5 text-base text-white/60 leading-relaxed max-w-sm">
-              Send bulk campaigns, connect unlimited lines, and track real-time deliverability with spectral precision.
-            </p>
-
-            {/* Feature list */}
-            <ul className="mt-10 space-y-3.5">
-              {features.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-center gap-3">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                    <Icon size={14} className="text-orange-400" strokeWidth={2} />
-                  </div>
-                  <span className="text-sm text-white/70">{text}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              to="/developer-docs"
-              className="mt-8 inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/85 transition hover:border-orange-500/40 hover:bg-orange-500/10 hover:text-white"
-            >
-              View Developer API docs →
-            </Link>
-          </div>
-
-          {/* Footer */}
-          <p className="text-xs text-white/30">© {new Date().getFullYear()} Tukonnect Digital • Secure & Private</p>
-        </div>
-      </div>
-
-      {/* Right login form panel */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-12">
-        {/* Mobile logo */}
-        <div className="mb-8 flex flex-col items-center lg:hidden">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-purple-600 shadow-lg shadow-orange-500/30 mb-3">
-            <MessageCircle size={22} strokeWidth={2.5} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-ink-900 dark:text-white flex items-center gap-1.5" style={{ letterSpacing: "-0.025em" }}>
+          <h1
+            style={{ letterSpacing: "-0.03em" }}
+            className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+          >
             Tukonnect Digital
           </h1>
+          <p className="mt-1 text-xs text-orange-200/70 tracking-widest uppercase font-medium drop-shadow-md">
+            Automated WhatsApp Marketing Infrastructure
+          </p>
         </div>
 
-        <div className="w-full max-w-[400px] rounded-2xl border border-ink-100 bg-surface/95 p-8 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#0d0d12]/90 dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-ink-900 dark:text-white" style={{ letterSpacing: "-0.025em" }}>
-              Welcome back
+        {/* Theatrical Elevated Glassmorphic Card */}
+        <div className="rounded-2xl border border-orange-500/30 bg-[#0c0816]/85 p-8 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(249,115,22,0.12)] backdrop-blur-2xl">
+          <div className="mb-6 text-center">
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              Sign In to Your Workspace
             </h2>
-            <p className="mt-1.5 text-sm text-ink-400 dark:text-ink-400">
-              Sign in to your account to continue.
+            <p className="mt-1 text-xs text-ink-300">
+              Manage instances, multi-device broadcasts & campaigns.
             </p>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+              <div className="rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-xs text-red-200 backdrop-blur-md">
                 <span>{error}</span>
                 {error.includes("verified") && (
-                  <div className="mt-2 pt-2 border-t border-red-200/50 dark:border-red-500/20">
+                  <div className="mt-2 pt-2 border-t border-red-500/30">
                     <Link
                       to={`/verify-email?email=${encodeURIComponent(email)}`}
-                      className="font-semibold text-orange-500 hover:underline"
+                      className="font-semibold text-orange-400 hover:underline"
                     >
                       Click here to verify your account →
                     </Link>
@@ -159,14 +81,14 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="label">Email address</label>
+              <label className="text-xs font-semibold text-ink-200 mb-1.5 block">Email Address</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@business.com"
-                className="input"
+                className="input text-xs py-2.5 bg-black/40 border-white/10 text-white placeholder:text-ink-500 focus:border-orange-500 focus:ring-orange-500/20"
               />
             </div>
 
@@ -182,32 +104,43 @@ export default function LoginPage() {
               <div className="mt-2 flex justify-end">
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-orange-500 hover:text-orange-400 hover:underline"
+                  className="text-xs font-medium text-orange-400 hover:text-orange-300 hover:underline transition-colors"
                 >
                   Forgot password?
                 </Link>
               </div>
             </div>
 
-            <ShimmerButton type="submit" loading={isSubmitting} className="w-full mt-2 py-3 !bg-orange-500 hover:!bg-orange-600">
-              Sign in
+            <ShimmerButton
+              type="submit"
+              loading={isSubmitting}
+              className="w-full mt-2 py-3 !bg-orange-500 hover:!bg-orange-600 font-bold text-xs tracking-wide shadow-lg shadow-orange-500/25"
+            >
+              Sign In to Dashboard
             </ShimmerButton>
           </form>
 
-          <p className="mt-6 text-center text-sm text-ink-400 dark:text-ink-400">
-            Don&apos;t have an account?{" "}
-            <Link to="/register" className="font-semibold text-orange-500 hover:text-orange-400 hover:underline">
-              Create one
-            </Link>
-          </p>
-          <p className="mt-3 text-center text-sm">
-            <Link to="/developer-docs" className="font-semibold text-ink-400 hover:text-ink-200 hover:underline">
-              View Developer API documentation
-            </Link>
-          </p>
+          <div className="mt-6 pt-5 border-t border-white/10 text-center space-y-2">
+            <p className="text-xs text-ink-300">
+              Don&apos;t have an account?{" "}
+              <Link to="/register" className="font-bold text-orange-400 hover:text-orange-300 hover:underline">
+                Create workspace
+              </Link>
+            </p>
+            <p className="text-xs">
+              <Link to="/developer-docs" className="text-ink-400 hover:text-ink-200 transition-colors">
+                View Developer API documentation →
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Subtle Trust Footer */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-orange-200/50 drop-shadow">
+          <ShieldCheck size={13} className="text-orange-400/80" />
+          <span>Encrypted Baileys Engine • 99.9% WhatsApp Delivery</span>
         </div>
       </div>
-
-    </div>
+    </HalloweenAuthLayout>
   );
 }

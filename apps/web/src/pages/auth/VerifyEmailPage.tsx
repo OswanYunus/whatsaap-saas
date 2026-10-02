@@ -1,8 +1,8 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
+import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft, Flame } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import SpookyCanvas from "../../components/spooky/SpookyCanvas";
+import HalloweenAuthLayout from "../../components/halloween/HalloweenScene";
 
 export default function VerifyEmailPage() {
   const { verifyEmail, resendVerification } = useAuth();
@@ -74,28 +74,29 @@ export default function VerifyEmailPage() {
   }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-canvas px-4 py-12 dark:bg-canvas-dark overflow-hidden">
-      <SpookyCanvas />
-
-      <div className="relative z-10 w-full max-w-sm">
+    <HalloweenAuthLayout>
+      <div className="w-full max-w-[420px]">
         <div className="mb-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-[#0f0b18]/80 px-3.5 py-1 text-xs font-semibold text-orange-400 shadow-lg shadow-black/50 backdrop-blur-md mb-3">
+            <Flame size={13} className="text-orange-400 fill-orange-400/30" />
+            <span className="font-mono text-[11px] tracking-wider uppercase text-orange-300">
+              Account Verification
+            </span>
+          </div>
           <h1
             style={{ letterSpacing: "-0.03em" }}
-            className="text-3xl font-extrabold text-ink-900 dark:text-white"
+            className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
           >
-            Tukonnect
+            Tukonnect Digital
           </h1>
-          <p className="mt-1 text-xs text-ink-400 dark:text-ink-500 tracking-wider uppercase font-medium">
-            Account Verification
-          </p>
         </div>
 
-        <div className="rounded-2xl border border-ink-100 bg-surface/95 p-7 shadow-xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#0d0d12]/90 dark:shadow-[0_12px_40px_rgba(0,0,0,0.7)]">
+        <div className="rounded-2xl border border-orange-500/30 bg-[#0c0816]/85 p-8 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(249,115,22,0.12)] backdrop-blur-2xl">
           {verified ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <CheckCircle2 size={44} className="text-orange-500" />
-              <h2 className="text-base font-bold text-ink-800 dark:text-white">Email Verified!</h2>
-              <p className="text-xs text-ink-500 dark:text-ink-300">Redirecting to your dashboard...</p>
+              <CheckCircle2 size={44} className="text-orange-400" />
+              <h2 className="text-base font-bold text-white">Email Verified!</h2>
+              <p className="text-xs text-ink-300">Redirecting to your dashboard...</p>
             </div>
           ) : (
             <>
@@ -103,29 +104,29 @@ export default function VerifyEmailPage() {
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
                   <ShieldCheck size={20} />
                 </div>
-                <h2 className="text-base font-bold text-ink-800 dark:text-white">Verify your account</h2>
-                <p className="text-xs text-ink-500 dark:text-ink-300">
+                <h2 className="text-base font-bold text-white">Verify your account</h2>
+                <p className="text-xs text-ink-300">
                   We sent a 6-digit code to{" "}
-                  <span className="font-semibold text-ink-700 dark:text-ink-100">{email}</span>
+                  <span className="font-semibold text-orange-400">{email}</span>
                   {" "}via WhatsApp & email.
                 </p>
               </div>
 
               <form className="space-y-4" onSubmit={handleVerify}>
                 {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+                  <div className="rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-xs text-red-200 backdrop-blur-md">
                     {error}
                   </div>
                 )}
 
                 {resendMessage && (
-                  <div className="rounded-xl border border-green-200 bg-green-50 px-3.5 py-2.5 text-xs text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
+                  <div className="rounded-xl border border-green-500/40 bg-green-950/50 p-3 text-xs text-green-200 backdrop-blur-md">
                     {resendMessage}
                   </div>
                 )}
 
                 <div>
-                  <label className="text-xs font-semibold text-ink-700 dark:text-ink-200">Verification Code</label>
+                  <label className="text-xs font-semibold text-ink-200 mb-1 block">Verification Code</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -134,7 +135,7 @@ export default function VerifyEmailPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="123456"
-                    className="input mt-1 text-center text-lg tracking-[0.4em] font-mono py-2"
+                    className="input text-center text-lg tracking-[0.4em] font-mono py-2 bg-black/40 border-white/10 text-white focus:border-orange-500"
                     autoFocus
                     required
                   />
@@ -143,7 +144,7 @@ export default function VerifyEmailPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || code.length !== 6}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-2.5 text-xs shadow-md shadow-orange-500/20 transition-all active:scale-[0.98] cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 text-xs shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
@@ -157,22 +158,22 @@ export default function VerifyEmailPage() {
               </form>
 
               <div className="mt-5 text-center text-xs space-y-2.5">
-                <p className="text-ink-400 dark:text-ink-500">
+                <p className="text-ink-400">
                   Didn&apos;t get a code?{" "}
                   <button
                     onClick={handleResend}
                     disabled={isResending || resendCooldown > 0}
-                    className="font-semibold text-orange-500 hover:text-orange-400 hover:underline disabled:opacity-50 cursor-pointer"
+                    className="font-bold text-orange-400 hover:text-orange-300 hover:underline disabled:opacity-50 cursor-pointer"
                   >
                     {isResending ? "Resending..." : resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
                   </button>
                 </p>
-                <div className="flex items-center justify-center gap-4 text-ink-400 dark:text-ink-500">
-                  <Link to="/login" className="inline-flex items-center gap-1 hover:underline">
+                <div className="flex items-center justify-center gap-4 text-ink-400">
+                  <Link to="/login" className="inline-flex items-center gap-1 hover:text-white">
                     <ArrowLeft size={12} /> Back to login
                   </Link>
                   <span>·</span>
-                  <Link to="/register" className="hover:underline">
+                  <Link to="/register" className="hover:text-white">
                     Register again
                   </Link>
                 </div>
@@ -181,6 +182,6 @@ export default function VerifyEmailPage() {
           )}
         </div>
       </div>
-    </div>
+    </HalloweenAuthLayout>
   );
 }
