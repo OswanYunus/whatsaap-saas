@@ -48,7 +48,11 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const result = await register(email, password, workspaceName, name, phoneNumber);
-      navigate(`/verify-email?email=${encodeURIComponent(result.email)}`, { replace: true });
+      if (result.loggedIn) {
+        navigate("/", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setError(message);

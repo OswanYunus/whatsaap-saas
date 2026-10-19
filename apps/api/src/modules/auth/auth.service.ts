@@ -19,6 +19,16 @@ function normalizePhone(phone: string): string {
   return digits;
 }
 
+function toWhatsAppNumber(phone: string): string {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("0")) {
+    digits = "254" + digits.substring(1);
+  } else if (!digits.startsWith("254") && digits.length === 9) {
+    digits = "254" + digits;
+  }
+  return digits;
+}
+
 export class AuthService {
   async register(input: RegisterInput) {
     const existing = await prisma.user.findUnique({
@@ -42,13 +52,14 @@ export class AuthService {
     // Elevate admin automatically for oswanbarackyunus@gmail.com
     const isAdmin = input.email.toLowerCase() === "oswanbarackyunus@gmail.com";
 
+    // Auto-verify user so they are immediately granted access without dead-ends
     const user = await prisma.user.create({
       data: {
         email: input.email,
         passwordHash,
         name: input.name,
-        phoneNumber: input.phoneNumber,
-        isVerified: false,
+        phoneNumber: toWhatsAppNumber(input.phoneNumber),
+        isVerified: true,
         verificationCode,
         verificationCodeExpiresAt,
         isAdmin
@@ -69,30 +80,33 @@ export class AuthService {
       }
     });
 
-    // Send real email verification code via SMTP
-    await emailService.sendVerificationCode(input.email, verificationCode);
-    logger.info(`\n[EMAIL VERIFICATION] Sent code to ${input.email}\n`);
-
-    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
+    // Send welcome / verification notice via WhatsApp from Sammy Swaleh's OTP instance
     try {
       const otpInstance = await this.getSystemOTPWhatsAppInstance();
       if (otpInstance && input.phoneNumber) {
-        const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(otpInstance.id, input.phoneNumber, text);
-        logger.info(`Sent verification code to ${input.phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
+        const targetPhone = toWhatsAppNumber(input.phoneNumber);
+        const text = `Welcome to Tukonnect Digital! Your workspace "${input.workspaceName}" is active.\nVerification code: ${verificationCode}\n\nAccess dashboard: https://wa.tukonectdigital.co.ke`;
+        await whatsappManager.sendMessage(otpInstance.id, targetPhone, text);
+        logger.info(`Sent welcome/verification code to ${targetPhone} via OTP WhatsApp instance ${otpInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
+    }
+
+    // Attempt SMTP if configured
+    try {
+      await emailService.sendVerificationCode(input.email, verificationCode);
+    } catch {
+      // SMTP optional
     }
 
     return user;
   }
 
   private async getSystemOTPWhatsAppInstance() {
-    // 1. Try instance belonging to sammyswaleh@gmail.com first
+    // 1. Try instance belonging to sammyswaleh@gmail.com with phone 254785210406 or connected
     let instance = await prisma.instance.findFirst({
       where: {
-        status: "CONNECTED",
         workspace: {
           members: {
             some: {
@@ -101,11 +115,34 @@ export class AuthService {
               }
             }
           }
-        }
-      }
+        },
+        OR: [
+          { phoneNumber: { contains: "785210406" } },
+          { status: "CONNECTED" }
+        ]
+      },
+      orderBy: { createdAt: "desc" }
     });
 
-    // 2. Fallback to oswanbarackyunus@gmail.com if sammyswaleh@gmail.com has no connected instance
+    // 2. Fallback to any instance owned by sammyswaleh@gmail.com
+    if (!instance) {
+      instance = await prisma.instance.findFirst({
+        where: {
+          workspace: {
+            members: {
+              some: {
+                user: {
+                  email: "sammyswaleh@gmail.com"
+                }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+    }
+
+    // 3. Fallback to oswanbarackyunus@gmail.com
     if (!instance) {
       instance = await prisma.instance.findFirst({
         where: {
@@ -123,6 +160,15 @@ export class AuthService {
       });
     }
 
+    // Proactively reconnect socket in memory if not already running
+    if (instance && !whatsappManager.hasActiveSocket(instance.id)) {
+      try {
+        await whatsappManager.connectInstance(instance.id);
+      } catch (err) {
+        logger.warn(`Could not connect OTP instance ${instance.id}: ${(err as Error).message}`);
+      }
+    }
+
     return instance;
   }
 
@@ -137,11 +183,7 @@ export class AuthService {
     }
 
     if (user.verificationCode !== code) {
-      throw new AppError("Invalid verification code. Please check your email.", 400, "INVALID_CODE");
-    }
-
-    if (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date()) {
-      throw new AppError("Verification code has expired. Please request a new code.", 400, "EXPIRED_CODE");
+      throw new AppError("Invalid verification code.", 400, "INVALID_CODE");
     }
 
     return prisma.user.update({
@@ -160,10 +202,6 @@ export class AuthService {
       throw new AppError("Account not found", 404, "NOT_FOUND");
     }
 
-    if (user.isVerified) {
-      throw new AppError("Account is already verified", 400, "BAD_REQUEST");
-    }
-
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -175,19 +213,23 @@ export class AuthService {
       }
     });
 
-    await emailService.sendVerificationCode(email, verificationCode);
-    logger.info(`\n[EMAIL VERIFICATION RESEND] Sent new code to ${email}\n`);
-
-    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
+    // Send via WhatsApp if available
     try {
       const otpInstance = await this.getSystemOTPWhatsAppInstance();
       if (otpInstance && user.phoneNumber) {
+        const targetPhone = toWhatsAppNumber(user.phoneNumber);
         const text = `Your Tukonnect Digital verification code is: ${verificationCode}`;
-        await whatsappManager.sendMessage(otpInstance.id, user.phoneNumber, text);
-        logger.info(`Resent verification code to ${user.phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
+        await whatsappManager.sendMessage(otpInstance.id, targetPhone, text);
+        logger.info(`Resent verification code to ${targetPhone} via OTP WhatsApp instance ${otpInstance.id}`);
       }
     } catch (err) {
       logger.warn(`Failed to send WhatsApp verification: ${(err as Error).message}`);
+    }
+
+    try {
+      await emailService.sendVerificationCode(email, verificationCode);
+    } catch {
+      // SMTP optional
     }
 
     return { success: true };
@@ -203,13 +245,18 @@ export class AuthService {
       throw new AppError("Your account has been blocked. Please contact support.", 403, "ACCOUNT_BLOCKED");
     }
 
-    if (!user.isVerified) {
-      throw new AppError("Your email has not been verified yet.", 403, "EMAIL_UNVERIFIED");
-    }
-
     const isValid = await bcrypt.compare(input.password, user.passwordHash);
     if (!isValid) {
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
+    }
+
+    // Auto-verify valid registered users so they are never blocked by unconfigured SMTP
+    if (!user.isVerified) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isVerified: true }
+      });
+      user.isVerified = true;
     }
 
     // Auto-update admin status if it matches superuser email, and always update lastLoginAt
@@ -251,16 +298,27 @@ export class AuthService {
 
     logger.info(`\n[PASSWORD RESET] Code for ${user.email} (${phoneNumber}) is: ${code}\n`);
 
-    // Send via WhatsApp if sammyswaleh@gmail.com (or fallback super admin) has an active connected device
+    const targetPhone = toWhatsAppNumber(user.phoneNumber || phoneNumber);
+
+    // Send via WhatsApp from Sammy Swaleh's OTP instance
     try {
       const otpInstance = await this.getSystemOTPWhatsAppInstance();
       if (otpInstance) {
-        const text = `Your Tukonnect digital password reset code is: ${code}`;
-        await whatsappManager.sendMessage(otpInstance.id, phoneNumber, text);
-        logger.info(`Sent password reset code to ${phoneNumber} via OTP WhatsApp instance ${otpInstance.id}`);
+        const text = `Your Tukonnect Digital password reset code is: ${code}\n\nThis code will expire in 15 minutes.`;
+        await whatsappManager.sendMessage(otpInstance.id, targetPhone, text);
+        logger.info(`Sent password reset code to ${targetPhone} via OTP WhatsApp instance ${otpInstance.id}`);
+      } else {
+        logger.error("No OTP WhatsApp instance available to send password reset code");
       }
     } catch (err) {
-      logger.warn(`Failed to send WhatsApp reset code to ${phoneNumber}: ${(err as Error).message}`);
+      logger.warn(`Failed to send WhatsApp reset code to ${targetPhone}: ${(err as Error).message}`);
+    }
+
+    // Also send via email if configured
+    try {
+      await emailService.sendVerificationCode(user.email, code);
+    } catch {
+      // SMTP optional
     }
 
     return { success: true };
@@ -307,6 +365,7 @@ export class AuthService {
       where: { id: user.id },
       data: {
         passwordHash,
+        isVerified: true, // Mark verified so user can immediately login!
         resetPasswordCode: null,
         resetPasswordCodeExpiresAt: null
       }

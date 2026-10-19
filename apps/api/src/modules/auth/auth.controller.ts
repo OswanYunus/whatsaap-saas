@@ -5,9 +5,16 @@ import type { RegisterInput, LoginInput, VerifyEmailInput, ForgotPasswordInput, 
 export class AuthController {
   async register(request: FastifyRequest<{ Body: RegisterInput }>, reply: FastifyReply) {
     const user = await authService.register(request.body);
+
+    const accessToken = await reply.jwtSign(
+      { sub: user.id, email: user.email },
+      { expiresIn: "30d" }
+    );
+
     return reply.status(201).send({
-      user: { id: user.id, email: user.email, name: user.name, isVerified: false },
-      message: "Registration successful. Please verify your email."
+      user: { id: user.id, email: user.email, name: user.name, phoneNumber: user.phoneNumber, isVerified: user.isVerified, isAdmin: user.isAdmin },
+      accessToken,
+      message: "Registration successful."
     });
   }
 

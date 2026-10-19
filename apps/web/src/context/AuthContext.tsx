@@ -28,7 +28,8 @@ interface LoginResponse {
 }
 
 interface RegisterResponse {
-  user: { id: string; email: string; name: string; isVerified: boolean };
+  user: AuthUser;
+  accessToken?: string;
   message: string;
 }
 
@@ -49,7 +50,7 @@ interface AuthContextValue {
   workspaceId: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, workspaceName: string, name: string, phoneNumber: string) => Promise<{ email: string }>;
+  register: (email: string, password: string, workspaceName: string, name: string, phoneNumber: string) => Promise<{ email: string; loggedIn?: boolean }>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
   forgotPassword: (phoneNumber: string) => Promise<void>;
@@ -152,10 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "/api/auth/register",
         { method: "POST", body: JSON.stringify({ email, password, workspaceName, name, phoneNumber }) }
       );
-      // Return email so frontend can redirect to verify page
-      return { email: result.user.email };
+      if (result.accessToken) {
+        const me = await apiFetch<MeResponse>("/api/users/me", { accessToken: result.accessToken });
+        applySession(result.user, result.accessToken, me);
+        return { email: result.user.email, loggedIn: true };
+      }
+      return { email: result.user.email, loggedIn: false };
     },
-    []
+    [applySession]
   );
 
   const verifyEmail = useCallback(
