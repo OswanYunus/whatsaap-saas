@@ -3,9 +3,6 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import PaywallModal from "../components/PaywallModal";
-import SpookyCanvas from "../components/spooky/SpookyCanvas";
-import SpookyGhostPet from "../components/spooky/SpookyGhostPet";
-import { CornerSpiderweb, AnimatedBats, RollingMist } from "../components/halloween/HalloweenScene";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -48,17 +45,9 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-canvas dark:bg-[#08060d] text-ink-900 dark:text-ink-100 overflow-x-hidden">
-      {/* Theatrical Ambient Background Canvas & Atmospheric Mist */}
-      <SpookyCanvas />
-      <AnimatedBats />
-      <RollingMist />
-      
-      {/* Decorative Corner Spiderweb (Non-intrusive) */}
-      <CornerSpiderweb position="right" />
-
+    <div className="flex min-h-screen bg-canvas dark:bg-canvas-dark">
       <Sidebar />
-      <div className="relative z-10 flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Navbar />
         <main className="flex-1 overflow-auto p-5 lg:p-6">
           <div className="mx-auto max-w-[1400px] animate-fade-in">
@@ -76,9 +65,6 @@ export default function DashboardLayout() {
           </div>
         </main>
       </div>
-
-      {/* Floating Interactive Spooky Companion */}
-      <SpookyGhostPet />
     </div>
   );
 }

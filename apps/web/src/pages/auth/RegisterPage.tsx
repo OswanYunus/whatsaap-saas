@@ -5,8 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import PasswordInput from "../../components/PasswordInput";
 import PhoneInput from "../../components/PhoneInput";
 import TermsModal from "../../components/TermsModal";
-import HalloweenAuthLayout from "../../components/halloween/HalloweenScene";
-import { Flame, ShieldCheck } from "lucide-react";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -62,49 +60,39 @@ export default function RegisterPage() {
   };
 
   return (
-    <HalloweenAuthLayout>
-      <div className="w-full max-w-[440px]">
-        {/* Brand Header */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-[#0f0b18]/80 px-3.5 py-1 text-xs font-semibold text-orange-400 shadow-lg shadow-black/50 backdrop-blur-md mb-3">
-            <Flame size={13} className="text-orange-400 fill-orange-400/30" />
-            <span className="font-mono text-[11px] tracking-wider uppercase text-orange-300">
-              Spooky Season Onboarding
-            </span>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 dark:bg-canvas-dark">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
           <h1
-            style={{ letterSpacing: "-0.03em" }}
-            className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-4xl text-ink-900 dark:text-white tracking-tight"
           >
-            Tukonnect Digital
+            Tukonnect
           </h1>
-          <p className="mt-1 text-xs text-orange-200/70 tracking-widest uppercase font-medium drop-shadow-md">
-            WhatsApp Marketing & Automation SaaS
+          <p className="mt-1 text-sm text-ink-400 dark:text-ink-500 tracking-widest uppercase font-medium">
+            Digital
           </p>
         </div>
 
-        {/* Register Card */}
-        <div className="rounded-2xl border border-orange-500/30 bg-[#0c0816]/85 p-7 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(249,115,22,0.12)] backdrop-blur-2xl">
-          <div className="mb-5 text-center">
-            <h2 className="text-xl font-bold text-white tracking-tight">Create your workspace</h2>
-            <p className="mt-1 text-xs text-ink-300">Get started with automated WhatsApp broadcasts.</p>
-          </div>
+        <div className="card p-8">
+          <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Create account</h1>
+          <p className="mt-1 text-sm text-ink-500 dark:text-ink-300">Set up your workspace.</p>
 
-          <form className="space-y-3.5" onSubmit={handleSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-xs text-red-200 backdrop-blur-md">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="text-xs font-semibold text-ink-200 mb-1 block">Full Name</label>
+              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Full Name</label>
               <input
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                className="input text-xs py-2.5 bg-black/40 border-white/10 text-white placeholder:text-ink-500 focus:border-orange-500 focus:ring-orange-500/20"
+                className="input mt-1.5"
               />
             </div>
 
@@ -114,25 +102,24 @@ export default function RegisterPage() {
             />
 
             <div>
-              <label className="text-xs font-semibold text-ink-200 mb-1 block">Workspace name</label>
+              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Workspace name</label>
               <input
                 required
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
                 placeholder="My Business"
-                className="input text-xs py-2.5 bg-black/40 border-white/10 text-white placeholder:text-ink-500 focus:border-orange-500 focus:ring-orange-500/20"
+                className="input mt-1.5"
               />
             </div>
-
             <div>
-              <label className="text-xs font-semibold text-ink-200 mb-1 block">Email Address</label>
+              <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@business.com"
-                className="input text-xs py-2.5 bg-black/40 border-white/10 text-white placeholder:text-ink-500 focus:border-orange-500 focus:ring-orange-500/20"
+                className="input mt-1.5"
               />
             </div>
 
@@ -157,14 +144,14 @@ export default function RegisterPage() {
               error={passwordsMismatch ? "Passwords don't match." : null}
             />
 
-            {/* Terms of Service Notice (No Checkbox Required, Button Link to Modal) */}
+            {/* Terms of Service Notice (No Checkbox, Clean Text Button Link) */}
             <div className="pt-1 pb-1">
-              <p className="text-[11px] text-ink-300 leading-normal text-center">
-                By clicking <span className="font-semibold text-white">&quot;Create account&quot;</span>, you agree to our{" "}
+              <p className="text-[11px] text-ink-400 dark:text-ink-400 leading-normal text-center">
+                By clicking <span className="font-semibold text-ink-700 dark:text-ink-200">&quot;Create account&quot;</span>, you agree to our{" "}
                 <button
                   type="button"
                   onClick={() => setShowTerms(true)}
-                  className="font-bold text-orange-400 hover:text-orange-300 underline underline-offset-2 transition-colors cursor-pointer inline"
+                  className="font-semibold text-accent-600 hover:text-accent-700 dark:text-accent-400 dark:hover:text-accent-300 underline underline-offset-2 transition-colors cursor-pointer inline"
                 >
                   Terms of Service & Privacy Policy
                 </button>
@@ -172,27 +159,22 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting || !canSubmit}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 text-xs shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] cursor-pointer"
-            >
-              <ShieldCheck size={16} />
-              <span>{isSubmitting ? "Creating workspace..." : "Create account"}</span>
+            <button type="submit" disabled={isSubmitting || !canSubmit} className="btn-primary w-full">
+              {isSubmitting ? "Creating account..." : "Create account"}
             </button>
           </form>
 
-          <p className="mt-5 text-center text-xs text-ink-300">
+          <p className="mt-6 text-center text-sm text-ink-500 dark:text-ink-300">
             Already have an account?{" "}
-            <Link to="/login" className="font-bold text-orange-400 hover:text-orange-300 hover:underline">
+            <Link to="/login" className="font-medium text-accent-600 hover:underline dark:text-accent-400">
               Log in
             </Link>
           </p>
         </div>
 
-        {/* Terms & Conditions Full Modal */}
+        {/* Terms & Conditions Modal */}
         <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
       </div>
-    </HalloweenAuthLayout>
+    </div>
   );
 }

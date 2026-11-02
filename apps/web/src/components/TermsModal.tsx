@@ -17,7 +17,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-500/10 border border-accent-500/20 text-accent-500">
               <Scale size={18} />
             </div>
             <div>
@@ -38,8 +38,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
         <div className="flex-1 overflow-y-auto px-6 py-5 text-xs text-ink-300 space-y-5 leading-relaxed font-sans">
           
           {/* Summary Box */}
-          <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.04] p-4 text-ink-200">
-            <div className="flex items-center gap-2 font-semibold text-orange-400 text-xs mb-1">
+          <div className="rounded-xl border border-accent-500/20 bg-accent-500/[0.04] p-4 text-ink-200">
+            <div className="flex items-center gap-2 font-semibold text-accent-400 text-xs mb-1">
               <ShieldCheck size={15} />
               <span>Important Summary for Account Owners</span>
             </div>
@@ -51,7 +51,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 1 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <span className="text-orange-400 font-mono">1.</span> Acceptance of Terms & Service Scope
+              <span className="text-accent-400 font-mono">1.</span> Acceptance of Terms & Service Scope
             </h3>
             <p>
               By accessing, registering, or using the Tukonnect Digital SaaS platform (&quot;Service&quot;), you (&quot;User&quot;, &quot;Customer&quot;, or &quot;Subscriber&quot;) agree to be legally bound by these Terms of Service. If you do not agree to all terms, you must immediately discontinue using this application.
@@ -61,8 +61,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 2 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Lock size={14} className="text-orange-400" />
-              <span className="text-orange-400 font-mono">2.</span> Account Monitoring, Data Collection & Privacy Protection
+              <Lock size={14} className="text-accent-400" />
+              <span className="text-accent-400 font-mono">2.</span> Account Monitoring, Data Collection & Privacy Protection
             </h3>
             <p>
               <strong>2.1 Administrative Monitoring:</strong> To maintain system uptime, security, and spam prevention, platform administrators actively monitor registered user account details, including verified email addresses, registration phone numbers, API request volumes, campaign delivery rates, and device connection telemetry.
@@ -75,8 +75,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 3 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <AlertTriangle size={14} className="text-orange-400" />
-              <span className="text-orange-400 font-mono">3.</span> Meta / WhatsApp Independent Third-Party Disclaimer
+              <AlertTriangle size={14} className="text-accent-400" />
+              <span className="text-accent-400 font-mono">3.</span> Meta / WhatsApp Independent Third-Party Disclaimer
             </h3>
             <p>
               <strong>3.1 No Affiliation:</strong> Tukonnect Digital is an independent third-party automation and messaging tool. It is neither affiliated with, sponsored by, nor endorsed by Meta Platforms, Inc., WhatsApp LLC, or any of their subsidiaries.
@@ -89,8 +89,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 4 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <FileText size={14} className="text-orange-400" />
-              <span className="text-orange-400 font-mono">4.</span> Anti-Spam, Fair Use & Zero-Tolerance Policy
+              <FileText size={14} className="text-accent-400" />
+              <span className="text-accent-400 font-mono">4.</span> Anti-Spam, Fair Use & Zero-Tolerance Policy
             </h3>
             <p>
               You agree NOT to use the Service for:
@@ -109,8 +109,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 5 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Bell size={14} className="text-orange-400" />
-              <span className="text-orange-400 font-mono">5.</span> Billing, Payments & No-Refund Policy
+              <Bell size={14} className="text-accent-400" />
+              <span className="text-accent-400 font-mono">5.</span> Billing, Payments & No-Refund Policy
             </h3>
             <p>
               All subscription packages (Basic, Premium, Pro) are billed in Kenya Shillings (KES) via M-Pesa / Tuma payment gateway. Due to the immediate provisioning of computing resources and WhatsApp instance workers, <strong>all subscription payments are final and strictly non-refundable</strong> once processed.
@@ -120,8 +120,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           {/* Section 6 */}
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Scale size={14} className="text-orange-400" />
-              <span className="text-orange-400 font-mono">6.</span> Limitation of Liability & Full Legal Indemnification
+              <Scale size={14} className="text-accent-400" />
+              <span className="text-accent-400 font-mono">6.</span> Limitation of Liability & Full Legal Indemnification
             </h3>
             <p>
               <strong>6.1 Disclaimer of Warranties:</strong> The Service is provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;. We do not guarantee error-free or uninterrupted operation.
@@ -141,7 +141,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
           <span className="text-[11px] text-ink-400">Tukonnect Digital • Strict Data Protection</span>
           <button
             onClick={onClose}
-            className="rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 text-xs font-semibold shadow-lg shadow-orange-500/20 transition-all active:scale-95"
+            className="rounded-xl bg-accent-500 hover:bg-accent-600 text-white px-5 py-2 text-xs font-semibold shadow-lg shadow-accent-500/20 transition-all active:scale-95"
           >
             I Understand & Agree
           </button>

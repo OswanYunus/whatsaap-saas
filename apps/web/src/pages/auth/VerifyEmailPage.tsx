@@ -1,8 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft, Flame } from "lucide-react";
+import { CheckCircle2, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import HalloweenAuthLayout from "../../components/halloween/HalloweenScene";
 
 export default function VerifyEmailPage() {
   const { verifyEmail, resendVerification } = useAuth();
@@ -26,6 +25,7 @@ export default function VerifyEmailPage() {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // If no email param, redirect to register
   useEffect(() => {
     if (!email) navigate("/register", { replace: true });
   }, [email, navigate]);
@@ -42,6 +42,7 @@ export default function VerifyEmailPage() {
     try {
       await verifyEmail(email, code.trim());
       setVerified(true);
+      // Auto-redirect after short delay
       setTimeout(() => navigate("/", { replace: true }), 1500);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid code. Please try again.";
@@ -67,6 +68,7 @@ export default function VerifyEmailPage() {
     }
   };
 
+  // Auto-verify when code reaches 6 digits
   useEffect(() => {
     if (code.length === 6 && !verified && !isSubmitting) {
       handleVerify();
@@ -74,59 +76,56 @@ export default function VerifyEmailPage() {
   }, [code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <HalloweenAuthLayout>
-      <div className="w-full max-w-[420px]">
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-[#0f0b18]/80 px-3.5 py-1 text-xs font-semibold text-orange-400 shadow-lg shadow-black/50 backdrop-blur-md mb-3">
-            <Flame size={13} className="text-orange-400 fill-orange-400/30" />
-            <span className="font-mono text-[11px] tracking-wider uppercase text-orange-300">
-              Account Verification
-            </span>
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 dark:bg-canvas-dark">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
           <h1
-            style={{ letterSpacing: "-0.03em" }}
-            className="text-3xl sm:text-4xl font-black text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
+            style={{ fontFamily: "'DM Serif Display', serif" }}
+            className="text-4xl text-ink-900 dark:text-white tracking-tight"
           >
-            Tukonnect Digital
+            Tukonnect
           </h1>
+          <p className="mt-1 text-sm text-ink-400 dark:text-ink-500 tracking-widest uppercase font-medium">
+            Digital
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-orange-500/30 bg-[#0c0816]/85 p-8 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_35px_rgba(249,115,22,0.12)] backdrop-blur-2xl">
+        <div className="card p-8">
           {verified ? (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <CheckCircle2 size={44} className="text-orange-400" />
-              <h2 className="text-base font-bold text-white">Email Verified!</h2>
-              <p className="text-xs text-ink-300">Redirecting to your dashboard...</p>
+              <CheckCircle2 size={48} className="text-green-500" />
+              <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Email Verified!</h1>
+              <p className="text-sm text-ink-500 dark:text-ink-300">Redirecting to your dashboard...</p>
             </div>
           ) : (
             <>
-              <div className="flex flex-col items-center gap-2 pb-4 text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400">
-                  <ShieldCheck size={20} />
+              <div className="flex flex-col items-center gap-3 pb-4 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-500/10">
+                  <ShieldCheck size={24} className="text-accent-600 dark:text-accent-400" />
                 </div>
-                <h2 className="text-base font-bold text-white">Verify your account</h2>
-                <p className="text-xs text-ink-300">
+                <h1 className="text-lg font-semibold text-ink-800 dark:text-white">Verify your account</h1>
+                <p className="text-sm text-ink-500 dark:text-ink-300">
                   We sent a 6-digit code to{" "}
-                  <span className="font-semibold text-orange-400">{email}</span>
-                  {" "}via WhatsApp & email.
+                  <span className="font-medium text-ink-700 dark:text-ink-100">{email}</span>
+                  {" "}via WhatsApp / email.
                 </p>
               </div>
 
               <form className="space-y-4" onSubmit={handleVerify}>
                 {error && (
-                  <div className="rounded-xl border border-red-500/40 bg-red-950/50 p-3 text-xs text-red-200 backdrop-blur-md">
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
                     {error}
                   </div>
                 )}
 
                 {resendMessage && (
-                  <div className="rounded-xl border border-green-500/40 bg-green-950/50 p-3 text-xs text-green-200 backdrop-blur-md">
+                  <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400">
                     {resendMessage}
                   </div>
                 )}
 
                 <div>
-                  <label className="text-xs font-semibold text-ink-200 mb-1 block">Verification Code</label>
+                  <label className="text-sm font-medium text-ink-700 dark:text-ink-100">Verification Code</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -135,7 +134,7 @@ export default function VerifyEmailPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="123456"
-                    className="input text-center text-lg tracking-[0.4em] font-mono py-2 bg-black/40 border-white/10 text-white focus:border-orange-500"
+                    className="input mt-1.5 text-center text-xl tracking-[0.5em] font-mono"
                     autoFocus
                     required
                   />
@@ -144,11 +143,11 @@ export default function VerifyEmailPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || code.length !== 6}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-3 text-xs shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] cursor-pointer"
+                  className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
-                      <RefreshCw size={14} className="animate-spin" />
+                      <RefreshCw size={16} className="animate-spin" />
                       Verifying...
                     </>
                   ) : (
@@ -157,23 +156,23 @@ export default function VerifyEmailPage() {
                 </button>
               </form>
 
-              <div className="mt-5 text-center text-xs space-y-2.5">
-                <p className="text-ink-400">
-                  Didn&apos;t get a code?{" "}
+              <div className="mt-6 text-center text-xs space-y-3">
+                <p className="text-ink-400 dark:text-ink-500">
+                  Didn't get a code?{" "}
                   <button
                     onClick={handleResend}
                     disabled={isResending || resendCooldown > 0}
-                    className="font-bold text-orange-400 hover:text-orange-300 hover:underline disabled:opacity-50 cursor-pointer"
+                    className="font-semibold text-accent-600 hover:underline dark:text-accent-400 disabled:opacity-50"
                   >
                     {isResending ? "Resending..." : resendCooldown > 0 ? `Resend Code (${resendCooldown}s)` : "Resend Code"}
                   </button>
                 </p>
-                <div className="flex items-center justify-center gap-4 text-ink-400">
-                  <Link to="/login" className="inline-flex items-center gap-1 hover:text-white">
+                <div className="flex items-center justify-center gap-4 text-ink-400 dark:text-ink-500">
+                  <Link to="/login" className="inline-flex items-center gap-1 hover:underline">
                     <ArrowLeft size={12} /> Back to login
                   </Link>
                   <span>·</span>
-                  <Link to="/register" className="hover:text-white">
+                  <Link to="/register" className="hover:underline">
                     Register again
                   </Link>
                 </div>
@@ -182,6 +181,6 @@ export default function VerifyEmailPage() {
           )}
         </div>
       </div>
-    </HalloweenAuthLayout>
+    </div>
   );
 }
