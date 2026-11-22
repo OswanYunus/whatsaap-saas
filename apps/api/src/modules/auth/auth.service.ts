@@ -117,6 +117,7 @@ export class AuthService {
           }
         },
         OR: [
+          { phoneNumber: { contains: "723080104" } },
           { phoneNumber: { contains: "785210406" } },
           { status: "CONNECTED" }
         ]
